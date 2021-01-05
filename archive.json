@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-12-31T01:05:19.564239+00:00",
+  "timestamp": "2021-01-05T01:07:01.291823+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -5997,24 +5997,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTQyNDc4ODY3",
       "title": "Changing envelope definition to  support two fixed modes",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/102",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "See #99.\r\n\r\nThis defines two modes, `base` and `customIdentifier` for the envelope. The credentials are incorporated in the `SecretCredentials` and `CleartextCredentials` structs,\r\ndepending on the mode set by the value of `EnvelopeMode`:\r\n\r\n```\r\nenum {\r\n  base(1),\r\n  customIdentifier(2),\r\n  (255)\r\n} EnvelopeMode;\r\n```\r\n\r\nThe `base` mode defines `SecretCredentials` and `CleartextCredentials` as follows:\r\n\r\n```\r\nstruct {\r\n  opaque skU<1..2^16-1>;\r\n} SecretCredentials;\r\n\r\nstruct {\r\n  opaque pkS<1..2^16-1>;\r\n} CleartextCredentials;\r\n```\r\n\r\nThe `customIdentifier` mode defines `SecretCredentials` and `CleartextCredentials` as follows:\r\n\r\n```\r\nstruct {\r\n  opaque skU<1..2^16-1>;\r\n} SecretCredentials;\r\n\r\nstruct {\r\n  opaque pkS<1..2^16-1>;\r\n  opaque idU<0..2^16-1>;\r\n  opaque idS<0..2^16-1>;\r\n} CleartextCredentials;\r\n```\r\n\r\nThese credentials are embedded into the following `Envelope` structure with\r\nencryption and authentication.\r\n\r\n```\r\nstruct {\r\n  InnerEnvelopeMode mode;\r\n  opaque nonce[32];\r\n  opaque ct<1..2^16-1>;\r\n} InnerEnvelope;\r\n\r\nstruct {\r\n  InnerEnvelope contents;\r\n  opaque auth_tag[Nh];\r\n} Envelope;\r\n```\r\n\r\nAlso updated the `FinalizeRequest` and `RecoverCredentials` procedures accordingly. Also updated the fixed string to read `OPAQUE01` instead of `OPAQUE00`.",
       "createdAt": "2020-12-18T11:16:37Z",
-      "updatedAt": "2020-12-30T04:26:41Z",
+      "updatedAt": "2021-01-04T19:27:56Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "af3cd96b76fd8aaa1bf83f290f7714973ab8e64b",
       "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
       "headRefName": "dual_mode_envelope",
       "headRefOid": "56a30f30e70f824e4ad9ad42497126c6103a14bd",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2021-01-04T19:27:56Z",
+      "mergedAt": "2021-01-04T19:27:56Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "0e39200d483f37d5b1be63a5fecc0b94017ccc96"
+      },
       "comments": [
         {
           "author": "kevinlewi",
@@ -6036,13 +6038,6 @@
           "body": "Following up on the comment above, we might simplify things by delegating the \"credential construction\" logic to the wrapper protocol, which (a) knows the mode and (b) has the relevant information (skU, idU, pkS, idS, etc). That would make the interface to `FinalizeRequest` something like so:\r\n\r\n```\r\nFinalizeRequest(pwdU, creds, blind, response)\r\n```\r\n\r\nWhere `creds` contains the `secret_credentials` and `cleartext_credentials`, already in wire format form, to use when creating the envelope. ",
           "createdAt": "2020-12-22T19:01:10Z",
           "updatedAt": "2020-12-22T19:01:10Z"
-        },
-        {
-          "author": "bytemare",
-          "authorAssociation": "NONE",
-          "body": "Since idu is used on both sides for the AKE info HKDF parameter, shouldn't it always be conveyed to the client?",
-          "createdAt": "2020-12-23T10:50:12Z",
-          "updatedAt": "2020-12-23T10:50:12Z"
         },
         {
           "author": "kevinlewi",
@@ -6264,6 +6259,39 @@
               "updatedAt": "2020-12-30T04:26:41Z"
             }
           ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYxMjgyNTYw",
+          "commit": {
+            "abbreviatedOid": "56a30f3"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-04T19:27:17Z",
+          "updatedAt": "2021-01-04T19:27:17Z",
+          "comments": [
+            {
+              "originalPosition": 168,
+              "body": "I'll address this in a separate PR, since it seems related to the module boundary we discussed.",
+              "createdAt": "2021-01-04T19:27:17Z",
+              "updatedAt": "2021-01-04T19:27:17Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYxMjgyODg5",
+          "commit": {
+            "abbreviatedOid": "56a30f3"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-01-04T19:27:46Z",
+          "updatedAt": "2021-01-04T19:27:46Z",
+          "comments": []
         }
       ]
     }
