@@ -1390,21 +1390,21 @@ covering <code>InnerEnvelope</code> and <code>CleartextCredentials</code>.<a hre
 <p id="section-3.1-13">The full procedure for constructing <code>Envelope</code> and <code>InnerEnvelope</code> from
 <code>SecretCredentials</code> and <code>CleartextCredentials</code> is described in <a href="#finalize-request" class="xref">Section 3.2.2.3</a>.<a href="#section-3.1-13" class="pilcrow">¶</a></p>
 <p id="section-3.1-14">The <code>EnvelopeMode</code> value is specified as part of the configuration (see <a href="#configurations" class="xref">Section 5</a>).<a href="#section-3.1-14" class="pilcrow">¶</a></p>
-<p id="section-3.1-15">The secret and cleartext credentials corresponding to the configuration-specific mode,
-along with the user public key <code>pkU</code> corresponding to <code>skU</code>, are stored in a generic
-<code>Credentials</code> object with the following named fields:<a href="#section-3.1-15" class="pilcrow">¶</a></p>
+<p id="section-3.1-15">Credential information corresponding to the configuration-specific mode,
+along with the user public key <code>pkU</code> and private key <code>skU</code>, are stored
+in a <code>Credentials</code> object with the following named fields:<a href="#section-3.1-15" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-3.1-16.1">
-            <code>mode</code>, the InnerEnvelopeMode mode<a href="#section-3.1-16.1" class="pilcrow">¶</a>
+            <code>skU</code>, the user's private key<a href="#section-3.1-16.1" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-3.1-16.2">
-            <code>secret_credentials</code>, the <code>SecretCredentials</code> value<a href="#section-3.1-16.2" class="pilcrow">¶</a>
+            <code>pkU</code>, the user's public key corresponding to <code>skU</code><a href="#section-3.1-16.2" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-3.1-16.3">
-            <code>cleartext_credentials</code>, the <code>CleartextCredentials</code> value<a href="#section-3.1-16.3" class="pilcrow">¶</a>
+            <code>idU</code>, an optional user identity (present only in the <code>customIdentifier</code> mode)<a href="#section-3.1-16.3" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-3.1-16.4">
-            <code>pkU</code>, the public key corresponding to <code>secret_credentials.skU</code>.<a href="#section-3.1-16.4" class="pilcrow">¶</a>
+            <code>idS</code>, an optional server identity (present only in the <code>customIdentifier</code> mode)<a href="#section-3.1-16.4" class="pilcrow">¶</a>
 </li>
         </ul>
 </section>
@@ -1583,6 +1583,7 @@ FinalizeRequest(pwdU, creds, blind, response)
 
 Parameters:
 - params, the MHF parameters established out of band
+- mode, the InnerEnvelope mode
 - Nh, the output size of the Hash function
 
 Input:
@@ -1599,18 +1600,21 @@ Steps:
 1. N = Unblind(blind, response.data)
 2. y = Finalize(pwdU, N, "OPAQUE01")
 3. rwdU = HKDF-Extract("rwdU", Harden(y, params))
-4. pt = Serialize(creds.secret_credentials)
-5. nonce = random(32)
-6. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, "Pad"), len(pt))
-7. auth_key = HKDF-Expand(rwdU, concat(nonce, "AuthKey"), Nh)
-8. export_key = HKDF-Expand(rwdU, concat(nonce, "ExportKey"), Nh)
-9. ct = xor(pt, pseudorandom_pad)
-10. auth_data = Serialize(creds.cleartext_credentials)
-11. Create InnerEnvelope contents with (creds.mode, nonce, ct)
-12. t = HMAC(auth_key, concat(contents, auth_data))
-13. Create Envelope envU with (contents, t)
-14. Create RegistrationUpload record with (envU, creds.pkU)
-15. Output (record, export_key)
+4. Create SecretCredentials secret_creds with creds.skU
+5. Create CleartextCredentials cleartext_creds with response.pkS
+   and custom identifiers creds.idU and creds.idS if mode is customIdentifer
+6. pt = Serialize(secret_creds)
+7. nonce = random(32)
+8. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, "Pad"), len(pt))
+9. auth_key = HKDF-Expand(rwdU, concat(nonce, "AuthKey"), Nh)
+10. export_key = HKDF-Expand(rwdU, concat(nonce, "ExportKey"), Nh)
+11. ct = xor(pt, pseudorandom_pad)
+12. auth_data = Serialize(cleartext_creds)
+13. Create InnerEnvelope contents with (mode, nonce, ct)
+14. auth_tag = HMAC(auth_key, concat(contents, auth_data))
+15. Create Envelope envU with (contents, auth_tag)
+16. Create RegistrationUpload record with (envU, creds.pkU)
+17. Output (record, export_key)
 </pre><a href="#section-3.2.2.3-1" class="pilcrow">¶</a>
 </div>
 <p id="section-3.2.2.3-2">[[RFC editor: please change "OPAQUE01" to the correct RFC identifier before publication.]]<a href="#section-3.2.2.3-2" class="pilcrow">¶</a></p>
@@ -1644,21 +1648,21 @@ shared secret key.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
 <p id="section-3.3-2">This section describes the message flow, encoding, and helper functions used in this stage.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
 <div class="artwork art-text alignLeft" id="section-3.3-3">
 <pre>
-       Client (pwdU)                       Server (skS, kU, envU)
+       Client (pwdU)                    Server (skS, pkS, kU, envU)
   -----------------------------------------------------------------
    request, blind = CreateCredentialRequest(pwdU)
 
                                    request
                               -----------------&gt;
 
-   response = CreateCredentialResponse(request, kU, envU)
+   response = CreateCredentialResponse(request, pkS, kU, envU)
 
                                    response
                               &lt;-----------------
 
-creds, export_key = RecoverCredentials(pwdU, blind, request, response)
+  skU, pkS, export_key = RecoverCredentials(pwdU, blind, response)
 
-                               (AKE with creds)
+                            (AKE with credentials)
                               &lt;================&gt;
 </pre><a href="#section-3.3-3" class="pilcrow">¶</a>
 </div>
@@ -1695,6 +1699,7 @@ data  </dt>
 <pre>
 struct {
     opaque data&lt;1..2^16-1&gt;;
+    opaque pkS&lt;1..2^16-1&gt;;
     Envelope envU;
 } CredentialResponse;
 </pre><a href="#section-3.3.1-3" class="pilcrow">¶</a>
@@ -1707,9 +1712,16 @@ data  </dt>
 </dd>
             <dd class="break"></dd>
 <dt id="section-3.3.1-4.3">
-envU  </dt>
+pkS  </dt>
             <dd style="margin-left: 1.5em" id="section-3.3.1-4.4">
-              <p id="section-3.3.1-4.4.1">The user's <code>Envelope</code> structure.<a href="#section-3.3.1-4.4.1" class="pilcrow">¶</a></p>
+              <p id="section-3.3.1-4.4.1">An encoded public key that will be used for the online authenticated
+key exchange stage.<a href="#section-3.3.1-4.4.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-3.3.1-4.5">
+envU  </dt>
+            <dd style="margin-left: 1.5em" id="section-3.3.1-4.6">
+              <p id="section-3.3.1-4.6.1">The user's <code>Envelope</code> structure.<a href="#section-3.3.1-4.6.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
 </dl>
@@ -1720,10 +1732,10 @@ envU  </dt>
           <h4 id="name-authenticated-key-exchange-f">
 <a href="#section-3.3.2" class="section-number selfRef">3.3.2. </a><a href="#name-authenticated-key-exchange-f" class="section-name selfRef">Authenticated key exchange functions</a>
           </h4>
-<div id="createcredentialrequestpwdu">
+<div id="createcredentialrequest">
 <section id="section-3.3.2.1">
-            <h5 id="name-createcredentialrequestpwdu">
-<a href="#section-3.3.2.1" class="section-number selfRef">3.3.2.1. </a><a href="#name-createcredentialrequestpwdu" class="section-name selfRef">CreateCredentialRequest(pwdU)</a>
+            <h5 id="name-createcredentialrequest">
+<a href="#section-3.3.2.1" class="section-number selfRef">3.3.2.1. </a><a href="#name-createcredentialrequest" class="section-name selfRef">CreateCredentialRequest</a>
             </h5>
 <div class="artwork art-text alignLeft" id="section-3.3.2.1-1">
 <pre>
@@ -1744,17 +1756,18 @@ Steps:
 </div>
 </section>
 </div>
-<div id="createcredentialresponserequest-ku-envu">
+<div id="createcredentialresponse">
 <section id="section-3.3.2.2">
-            <h5 id="name-createcredentialresponsereq">
-<a href="#section-3.3.2.2" class="section-number selfRef">3.3.2.2. </a><a href="#name-createcredentialresponsereq" class="section-name selfRef">CreateCredentialResponse(request, kU, envU)</a>
+            <h5 id="name-createcredentialresponse">
+<a href="#section-3.3.2.2" class="section-number selfRef">3.3.2.2. </a><a href="#name-createcredentialresponse" class="section-name selfRef">CreateCredentialResponse</a>
             </h5>
 <div class="artwork art-text alignLeft" id="section-3.3.2.2-1">
 <pre>
-CreateCredentialResponse(request, kU, envU)
+CreateCredentialResponse(request, pkS, kU, envU)
 
 Input:
 - request, a CredentialRequest structure
+- pkS, public key of the server
 - kU, OPRF key associated with idU
 - envU, Envelope associated with idU
 
@@ -1763,20 +1776,20 @@ Output:
 
 Steps:
 1. Z = Evaluate(kU, request.data)
-2. Create CredentialResponse response with (Z, envU)
+2. Create CredentialResponse response with (Z, pkS, envU)
 3. Output response
 </pre><a href="#section-3.3.2.2-1" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
-<div id="recovercredentialspwdu-blind-request-response">
+<div id="recovercredentials">
 <section id="section-3.3.2.3">
-            <h5 id="name-recovercredentialspwdu-blin">
-<a href="#section-3.3.2.3" class="section-number selfRef">3.3.2.3. </a><a href="#name-recovercredentialspwdu-blin" class="section-name selfRef">RecoverCredentials(pwdU, blind, request, response)</a>
+            <h5 id="name-recovercredentials">
+<a href="#section-3.3.2.3" class="section-number selfRef">3.3.2.3. </a><a href="#name-recovercredentials" class="section-name selfRef">RecoverCredentials</a>
             </h5>
 <div class="artwork art-text alignLeft" id="section-3.3.2.3-1">
 <pre>
-RecoverCredentials(pwdU, cleartext_creds, blind, response)
+RecoverCredentials(pwdU, blind, response)
 
 Parameters:
 - params, the MHF parameters established out of band
@@ -1784,7 +1797,6 @@ Parameters:
 
 Input:
 - pwdU, an opaque byte string containing the user's password
-- cleartext_creds, a `CleartextCredentials` structure
 - blind, an OPRF Scalar value
 - response, a CredentialResponse structure
 
@@ -1802,13 +1814,13 @@ Steps:
 7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, "Pad"), len(ct))
 8. auth_key = HKDF-Expand(rwdU, concat(nonce, "AuthKey"), Nh)
 9. export_key = HKDF-Expand(rwdU, concat(nonce, "ExportKey"), Nh)
-11. expected_tag = HMAC(auth_key, concat(contents, Serialize(cleartext_credentials)))
+10. Create CleartextCredentials cleartext_creds with response.pkS
+    and custom identifiers creds.idU and creds.idS if mode is customIdentifer
+11. expected_tag = HMAC(auth_key, concat(contents, Serialize(cleartext_creds)))
 12. If !ct_equal(response.envU.auth_tag, expected_tag), raise DecryptionError
 13. pt = xor(ct, pseudorandom_pad)
 14. secret_creds = Deserialize(pt)
-15. Create Credentials creds with secret_credentials = secret_creds,
-    cleartext_credentials = cleartext_creds and mode = response.envU.contents.mode.
-15. Output (creds, export_key)
+15. Output (secret_creds.skU, response.pkS, export_key)
 </pre><a href="#section-3.3.2.3-1" class="pilcrow">¶</a>
 </div>
 <p id="section-3.3.2.3-2">[[RFC editor: please change "OPAQUE01" to the correct RFC identifier before publication.]]<a href="#section-3.3.2.3-2" class="pilcrow">¶</a></p>
