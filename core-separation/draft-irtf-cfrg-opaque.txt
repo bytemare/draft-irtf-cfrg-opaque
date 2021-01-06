@@ -5,10 +5,10 @@
 Network Working Group                                        H. Krawczyk
 Internet-Draft                                       Algorand Foundation
 Intended status: Informational                                   K. Lewi
-Expires: 9 July 2021                                       Novi Research
+Expires: 10 July 2021                                      Novi Research
                                                                C.A. Wood
                                                               Cloudflare
-                                                          5 January 2021
+                                                          6 January 2021
 
 
                   The OPAQUE Asymmetric PAKE Protocol
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 9 July 2021.
+   This Internet-Draft will expire on 10 July 2021.
 
 Copyright Notice
 
@@ -369,15 +369,6 @@ Table of Contents
      opaque idS<0..2^16-1>;
    } CleartextCredentials;
 
-   The secret and cleartext credentials, along with the mode, are
-   wrapped up in a "Credentials" structure, defined as follows:
-
-   struct {
-     InnerEnvelopeMode mode;
-     SecretCredentials secret_credentials;
-     CleartextCredentials cleartext_credentials;
-   } Credentials;
-
    These credentials are embedded into the following "Envelope"
    structure with encryption and authentication.
 
@@ -405,6 +396,19 @@ Table of Contents
 
    The "EnvelopeMode" value is specified as part of the configuration
    (see Section 5).
+
+   The secret and cleartext credentials corresponding to the
+   configuration-specific mode, along with the user public key "pkU"
+   corresponding to "skU", are stored in a generic "Credentials" object
+   with the following named fields:
+
+   *  "mode", the InnerEnvelopeMode mode
+
+   *  "secret_credentials", the "SecretCredentials" value
+
+   *  "cleartext_credentials", the "CleartextCredentials" value
+
+   *  "pkU", the public key corresponding to "secret_credentials.skU".
 
 3.2.  Offline registration stage
 
@@ -438,9 +442,9 @@ Table of Contents
                                       response
                                  <-----------------
 
-    envU, export_key = FinalizeRequest(pwdU, creds, blind, response)
+    record, export_key = FinalizeRequest(pwdU, creds, blind, response)
 
-                                        envU
+                                      record
                                  ------------------>
 
    Both client and server MUST validate the other party's public key
@@ -465,14 +469,13 @@ Table of Contents
       authenticated key exchange stage.
 
    struct {
-       Envelope envelope;
+       Envelope envU;
        opaque pkU<0..2^16-1>;
    } RegistrationUpload;
 
-   envelope  The "Envelope" structure
+   envU  The user's "Envelope" structure
 
-   pkU  An encoded public key, matching the public key contained within
-      the encrypted envelope.
+   pkU  An encoded public key, corresponding to the private key "skU".
 
 3.2.2.  Registration functions
 
@@ -543,7 +546,8 @@ Table of Contents
   11. Create InnerEnvelope contents with (creds.mode, nonce, ct)
   12. t = HMAC(auth_key, concat(contents, auth_data))
   13. Create Envelope envU with (contents, t)
-  14. Output (envU, export_key)
+  14. Create RegistrationUpload record with (envU, creds.pkU)
+  15. Output (record, export_key)
 
    [[RFC editor: please change "OPAQUE01" to the correct RFC identifier
    before publication.]]
@@ -554,12 +558,11 @@ Table of Contents
 
    See Section 3.4 for details about the output export_key usage.
 
-   Upon completion of this function, the client MUST send its public key
-   "pkU", optional identity "idU" (depending on the mode), and
-   corresponding envelope "envU" to the server, where they are then
-   store as a tuple "(envU, pkU, kU, pkS, skS)".  If "skS" and "pkS" are
-   used for multiple users, the server can store these values separately
-   and omit them from the user's record.
+   Upon completion of this function, the client MUST send "record" to
+   the server.  The server then stores the tuple "(envU, pkU, kU, pkS,
+   skS)", where "envU" and "pkU" are obtained from "record".  If "skS"
+   and "pkS" are used for multiple users, the server can store these
+   values separately and omit them from the user's record.
 
 3.3.  Online authenticated key exchange stage
 
@@ -617,12 +620,12 @@ Table of Contents
 
    struct {
        opaque data<1..2^16-1>;
-       Envelope envelope;
+       Envelope envU;
    } CredentialResponse;
 
    data  A serialized OPRF group element.
 
-   envelope  The "Envelope" structure.
+   envU  The user's "Envelope" structure.
 
 3.3.2.  Authenticated key exchange functions
 
@@ -680,7 +683,7 @@ Output:
 Steps:
 1. N = Unblind(blind, response.data)
 2. y = Finalize(pwdU, N, "OPAQUE01")
-3. contents = response.envelope.contents
+3. contents = response.envU.contents
 4. nonce = contents.nonce
 5. ct = contents.ct
 6. rwdU = HKDF-Extract("rwdU", Harden(y, params))
@@ -688,10 +691,12 @@ Steps:
 8. auth_key = HKDF-Expand(rwdU, concat(nonce, "AuthKey"), Nh)
 9. export_key = HKDF-Expand(rwdU, concat(nonce, "ExportKey"), Nh)
 11. expected_tag = HMAC(auth_key, concat(contents, Serialize(cleartext_credentials)))
-12. If !ct_equal(response.envelope.auth_tag, expected_tag), raise DecryptionError
+12. If !ct_equal(response.envU.auth_tag, expected_tag), raise DecryptionError
 13. pt = xor(ct, pseudorandom_pad)
-14. secret_credentials = Deserialize(pt)
-15. Output (secret_credentials, export_key)
+14. secret_creds = Deserialize(pt)
+15. Create Credentials creds with secret_credentials = secret_creds,
+    cleartext_credentials = cleartext_creds and mode = response.envU.contents.mode.
+15. Output (creds, export_key)
 
    [[RFC editor: please change "OPAQUE01" to the correct RFC identifier
    before publication.]]
