@@ -1234,14 +1234,6 @@ output element <code>Z</code>.<a href="#section-2-2.1.2.2" class="pilcrow">¶</a
             <li class="normal" id="section-2-2.1.2.4">Finalize(x, N, info): Compute the OPRF output using input <code>x</code>, <code>N</code>, and domain
 separation tag <code>info</code>.<a href="#section-2-2.1.2.4" class="pilcrow">¶</a>
 </li>
-            <li class="normal" id="section-2-2.1.2.5">Serialize(x): Encode the OPRF group element x as a fixed-length byte string
-<code>enc</code>. The size of <code>enc</code> is determined by the underlying OPRF group. The type
-of a serialized OPRF group element is called SerializedElement.<a href="#section-2-2.1.2.5" class="pilcrow">¶</a>
-</li>
-            <li class="normal" id="section-2-2.1.2.6">Deserialize(enc): Decode a byte string <code>enc</code> into an OPRF group element <code>x</code>,
-or produce an error if <code>enc</code> is an invalid encoding. This is the inverse
-of Serialize, i.e., <code>x = Deserialize(Serialize(x))</code>.<a href="#section-2-2.1.2.6" class="pilcrow">¶</a>
-</li>
           </ul>
 </li>
         <li class="normal" id="section-2-2.2">
