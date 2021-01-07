@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-05T01:07:01.291823+00:00",
+  "timestamp": "2021-01-07T01:11:13.829750+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2275,7 +2275,7 @@
       "labels": [],
       "body": "From [here](https://github.com/cfrg/draft-irtf-cfrg-opaque/blame/master/draft-irtf-cfrg-opaque.md#L444-L446): Don't these functions need to be defined somewhere? At least they should sort the extensions by their type, perhaps in increasing order. It seems defining these in the specification is a requirement to producing compatible test vectors.\r\n\r\ncc: @chris-wood ",
       "createdAt": "2020-12-04T00:53:48Z",
-      "updatedAt": "2020-12-04T02:11:41Z",
+      "updatedAt": "2021-01-06T22:18:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -2298,6 +2298,13 @@
           "body": "Ah, yeah, good point about different implementations. I\u2019ll draft up a PR for this soon.",
           "createdAt": "2020-12-04T02:11:40Z",
           "updatedAt": "2020-12-04T02:11:40Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This is addressed by #107, which removes these credential serialize functions. The structs are already in wire format and don't need further serialization.",
+          "createdAt": "2021-01-06T22:18:35Z",
+          "updatedAt": "2021-01-06T22:18:35Z"
         }
       ]
     },
@@ -2445,15 +2452,15 @@
       "id": "MDU6SXNzdWU3NzQ2MTE0ODI=",
       "title": "Update wrapper protocol APIs to pass in credentials to FinalizeRequest",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/105",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Following up on the comment above, we might simplify things by delegating the \"credential construction\" logic to the wrapper protocol, which (a) knows the mode and (b) has the relevant information (skU, idU, pkS, idS, etc). That would make the interface to `FinalizeRequest` something like so:\r\n\r\n```\r\nFinalizeRequest(pwdU, creds, blind, response)\r\n```\r\n\r\nWhere `creds` contains the `secret_credentials` and `cleartext_credentials`, already in wire format form, to use when creating the envelope.\r\n\r\n_Originally posted by @chris-wood in https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/102#issuecomment-749720379_",
       "createdAt": "2020-12-25T03:13:54Z",
-      "updatedAt": "2020-12-25T03:13:54Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-06T21:48:01Z",
+      "closedAt": "2021-01-06T21:48:01Z",
       "comments": []
     }
   ],
@@ -6294,6 +6301,192 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 106,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTQ4NTcyMTAw",
+      "title": "Separate the core and wrapper protocol",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/106",
+      "state": "MERGED",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Lift wrapper-specific pieces, such as credential information and key material, out of the core protocol, where they are not used. Update the reference implementation to match.\r\n\r\nI might ignore the reference implementation for the time being, since it's kind of sloppy. But if you wanted to check it for consistency against the core module API boundary, that would be useful. \r\n\r\nCloses #105.",
+      "createdAt": "2021-01-05T01:24:29Z",
+      "updatedAt": "2021-01-06T21:48:02Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "0e39200d483f37d5b1be63a5fecc0b94017ccc96",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/core-separation",
+      "headRefOid": "f4bb5b809a7a1786091f07e346c293d19319640d",
+      "closedAt": "2021-01-06T21:48:01Z",
+      "mergedAt": "2021-01-06T21:48:01Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "758c8a0314775f16f3c02c7741bf282de321f0cb"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYyMjg2NzY5",
+          "commit": {
+            "abbreviatedOid": "bc8584d"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-06T02:37:17Z",
+          "updatedAt": "2021-01-06T02:48:55Z",
+          "comments": [
+            {
+              "originalPosition": 114,
+              "body": "Why doesn't the client just send an instance of the `RegistrationUpload` function, which includes `pkU` and `envU`? It doesn't need to send `idU` since that is taken care of in the application layer and not necessary for the OPAQUE protocol",
+              "createdAt": "2021-01-06T02:37:17Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            },
+            {
+              "originalPosition": 35,
+              "body": "I think this should be an instance of the `RegistrationUpload` structure, not `envU`",
+              "createdAt": "2021-01-06T02:37:40Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            },
+            {
+              "originalPosition": 200,
+              "body": "Line 806 should output an instance of `Credentials`, then, right? (Currently it outputs a secret_credentials)",
+              "createdAt": "2021-01-06T02:46:13Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            },
+            {
+              "originalPosition": 12,
+              "body": "I believe this will be the only instance of a struct that we define in this document which never gets serialized. Why not just replace all instances with a tuple of (mode, secret_credentials, cleartext_credentials)? And note that the RecoverCredentials function doesn't actually need to return the cleartext_credentials or the mode...",
+              "createdAt": "2021-01-06T02:48:19Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYyMjkxOTI2",
+          "commit": {
+            "abbreviatedOid": "bc8584d"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-06T02:55:02Z",
+          "updatedAt": "2021-01-06T02:55:02Z",
+          "comments": [
+            {
+              "originalPosition": 12,
+              "body": "You could, yeah. This is just a helper type to wrap up everything in that tuple. ",
+              "createdAt": "2021-01-06T02:55:02Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYyMjkyMTc0",
+          "commit": {
+            "abbreviatedOid": "bc8584d"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-06T02:55:49Z",
+          "updatedAt": "2021-01-06T02:55:50Z",
+          "comments": [
+            {
+              "originalPosition": 200,
+              "body": "Hmm, it is nice if it just returns a `Credentials` type. I'll make the change!",
+              "createdAt": "2021-01-06T02:55:49Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYyMzAyNjA5",
+          "commit": {
+            "abbreviatedOid": "bc8584d"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-06T03:26:19Z",
+          "updatedAt": "2021-01-06T03:26:20Z",
+          "comments": [
+            {
+              "originalPosition": 35,
+              "body": "I intentionally reverted this so that the wrapper could construct `RegistrationUpload`, but on reflection that's probably not best. I'll revert this bit.",
+              "createdAt": "2021-01-06T03:26:20Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYyNDM5MDAy",
+          "commit": {
+            "abbreviatedOid": "83a1fb0"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Sorry, I think I missed this with my first pass, but pkS needs to be a part of CredentialResponse (so I would add back pkS everywhere). Other than that, looks good!",
+          "createdAt": "2021-01-06T09:21:46Z",
+          "updatedAt": "2021-01-06T09:23:38Z",
+          "comments": [
+            {
+              "originalPosition": 187,
+              "body": "pkS should not be removed -- see my last comment on #63 . The problem is that the pkS is no longer included in the envelope.",
+              "createdAt": "2021-01-06T09:21:46Z",
+              "updatedAt": "2021-01-06T19:03:40Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYzMDE5MTQy",
+          "commit": {
+            "abbreviatedOid": "f4bb5b8"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Looks good!",
+          "createdAt": "2021-01-06T20:31:54Z",
+          "updatedAt": "2021-01-06T20:31:54Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 107,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTUwNjk2NDQ0",
+      "title": "Pin envelope mode to base or customIdentifier.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/107",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I chose to leave the enumeration and restrict its values to in the text. \r\n\r\nAs discussed, this also makes pkU/pkS mandatory in the core OPAQUE messages.",
+      "createdAt": "2021-01-06T22:03:34Z",
+      "updatedAt": "2021-01-06T22:22:05Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "758c8a0314775f16f3c02c7741bf282de321f0cb",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/pin-modes",
+      "headRefOid": "db59aa3ac9999cd2f3c340886d522c30e7749942",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
