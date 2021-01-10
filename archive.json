@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-07T01:11:13.829750+00:00",
+  "timestamp": "2021-01-10T01:15:06.931365+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -631,15 +631,15 @@
       "id": "MDU6SXNzdWU2OTA0ODk5NzQ=",
       "title": "parsing of envelope when ct/pt are variable length",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/51",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "stef",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "At the end of the `#protocol-messages` section is a description of the envelope structure as seen here:\r\n\r\n```\r\nOPAQUE uses an `Envelope` structure to encapsulate an encrypted `Credentials` structure.\r\nIt is encoded as follows.\r\n\r\n~~~\r\nstruct {\r\n  opaque nonce[32];\r\n  opaque ct<1..2^16-1>;\r\n  opaque auth_data<0..2^16-1>;\r\n  opaque auth_tag<1..2^16-1>;\r\n} Envelope;\r\n~~~\r\n\r\nnonce\r\n: A unique 32-byte nonce used to protect this Envelope.\r\n\r\nct\r\n: Encoding of encrypted and authenticated credential extensions list.\r\n\r\nauth_data\r\n: Encoding of an authenticated credential extensions list.\r\n\r\nauth_tag\r\n: Authentication tag protecting the contents of the envelope.\r\n```\r\n\r\nas an implementer of opaque (see here https://github.com/stef/libsphinx/blob/master/src/opaque.c) i wonder how to parse this structure when both fields might be of variable length. In such a case it is useful to have the lengths included in the auth_data section at known offsets of the envelope. hence i propose to move the auth_data section infront of the ct section, either at the very beginning before the nonce, or between the nonce and the ct, in both cases an instantiation of the protocol can decide to include the lengths at known offsets and will be able to parse the envelope, even if this means that these lengths are used before they are authenticated.",
       "createdAt": "2020-09-01T22:25:34Z",
-      "updatedAt": "2020-10-28T13:03:02Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-08T04:03:06Z",
+      "closedAt": "2021-01-08T04:03:06Z",
       "comments": [
         {
           "author": "stef",
@@ -731,6 +731,13 @@
           "body": "> > uh, i see that variants are used in the ProtocolMessage struct.\r\n> \r\n> Is there a question hidden in here?\r\n\r\nwell yes, i first thought that variants are not used in the OPAQUE draft, only later i saw it, so the semantics of variants are quite understandable, but might also deserve mention in the clarifying section.\r\n",
           "createdAt": "2020-09-04T20:02:15Z",
           "updatedAt": "2020-09-04T20:02:15Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I believe we can close this out now, given the recent changes to the envelope structure which ensure that there is only one variable-length field:\r\n\r\n```\r\nstruct {\r\n  InnerEnvelopeMode mode;\r\n  opaque nonce[32];\r\n  opaque encrypted_creds<1..2^16-1>;\r\n} InnerEnvelope;\r\n\r\nstruct {\r\n  InnerEnvelope contents;\r\n  opaque auth_tag[Nh];\r\n} Envelope;\r\n```",
+          "createdAt": "2021-01-08T04:02:56Z",
+          "updatedAt": "2021-01-08T04:02:56Z"
         }
       ]
     },
@@ -1968,15 +1975,15 @@
       "id": "MDU6SXNzdWU3NDgwNDc4ODI=",
       "title": "credential_lists in CreateRegistrationResponse",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/87",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "stef",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "in this section https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/draft-irtf-cfrg-opaque.md#registration-messages\r\n\r\n```\r\nstruct {\r\n    opaque data<0..2^16-1>;\r\n    opaque pkS<0..2^16-1>;\r\n    CredentialType secret_types<1..255>;\r\n    CredentialType cleartext_types<0..255>;\r\n} RegistrationResponse;\r\n```\r\nSpecifies\r\n\r\n> - secret_credentials_list, a list of CredentialType values clients should include in the secret_credentials list of their Credentials structure\r\n> - cleartext_credentials_list, a list of CredentialType values clients should include in the cleartext_credentials list of their Credentials structure\r\n\r\nwhat if a CredentialType is in both of these lists? Why not pack this information in 10 bits, where each CredentialType has 2 bits for signalling:\r\n```c\r\n  NotPackaged = 0,  // field is not packaged in envelope\r\n  InSecEnv = 1,        // field is encrypted\r\n  InClrEnv = 2          // field is plaintext, but authenticated\r\n```",
       "createdAt": "2020-11-21T16:07:33Z",
-      "updatedAt": "2020-11-24T01:43:29Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-08T00:43:17Z",
+      "closedAt": "2021-01-08T00:43:17Z",
       "comments": [
         {
           "author": "stef",
@@ -1991,6 +1998,13 @@
           "body": "> what if a CredentialType is in both of these lists\r\n\r\nA credential should only be in one or the other. (We should add text saying that doing otherwise is a protocol violation. I certainly don't see a reason for it, at least.) We can address #84 separately.",
           "createdAt": "2020-11-24T01:43:29Z",
           "updatedAt": "2020-11-24T01:43:29Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "No longer relevant (and so this issue can be closed) since credentials list is not a thing anymore (after #102)",
+          "createdAt": "2021-01-08T00:43:17Z",
+          "updatedAt": "2021-01-08T00:43:17Z"
         }
       ]
     },
@@ -2313,15 +2327,15 @@
       "id": "MDU6SXNzdWU3NTY3MDk3ODM=",
       "title": "Removing auth_data from the envelope",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/98",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I think we should remove the [`auth_data` field](https://github.com/cfrg/draft-irtf-cfrg-opaque/blame/master/draft-irtf-cfrg-opaque.md#L455) in the envelope, but still keep it as part of the [HMAC derivation process](https://github.com/cfrg/draft-irtf-cfrg-opaque/blame/master/draft-irtf-cfrg-opaque.md#L639-L641). The only reason why this might be set is if it contains a credential that is marked as a member of cleartext_credentials. But in this case, why not just make it a secret_credentials instead?\r\n\r\nThe advantage of cleartext_credentials are only apparent when the credential itself is NOT included in auth_data (and hence does not affect the total size of the envelope).",
       "createdAt": "2020-12-04T01:02:09Z",
-      "updatedAt": "2020-12-10T22:20:19Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-08T00:42:38Z",
+      "closedAt": "2021-01-08T00:42:38Z",
       "comments": [
         {
           "author": "chris-wood",
@@ -2329,6 +2343,13 @@
           "body": "I think this is a fine idea, but we still need a way for the client to know what values to include in the HMAC computation. Would the server supply, in its CredentialResponse, the list of cleartext_credential types used?",
           "createdAt": "2020-12-10T22:20:19Z",
           "updatedAt": "2020-12-10T22:20:19Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Removed in #102 ",
+          "createdAt": "2021-01-08T00:42:38Z",
+          "updatedAt": "2021-01-08T00:42:38Z"
         }
       ]
     },
@@ -2337,15 +2358,15 @@
       "id": "MDU6SXNzdWU3NTY3MTMzMjc=",
       "title": "Simplifying the options for the credentials list in the envelope",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/99",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "This issue is related to #87 and #90, in which the complexities of the setting of the envelope have come up.\r\n\r\nOne problem I foresee happening with allowing the server to choose what parameters should be optional, [which go in secret_credentials, which go in cleartext_credentials, etc.](https://github.com/cfrg/draft-irtf-cfrg-opaque/blame/master/draft-irtf-cfrg-opaque.md#L438-L442) is that it becomes cumbersome to manage exhaustive test vectors that would test all of the edge cases (combinations of these settings). And if we choose to only provide test vectors for some default setting, we run the risk of an implementation in the wild incorrectly implementing support for a non-default setting that we did not provide test vectors for.\r\n\r\nTo remedy this, one approach we could take would be to allow for only a small (maybe 2?) set of options for organizing the credentials in the envelope. Perhaps a \"base mode\" and a \"custom identifier mode\", and we could spend a single byte to dictate the mode for the envelope (similar to the VOPRF RFC with the byte representing the base mode or verifiable mode). Base mode would be some default, and \"custom identifier mode\" would support a custom idU and idS being included as secret_credentials.\r\n\r\nIf this sounds good, then now we just need to decide what modes we will support, and what each mode will look like.\r\n",
       "createdAt": "2020-12-04T01:10:53Z",
-      "updatedAt": "2020-12-23T11:18:41Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-08T23:27:36Z",
+      "closedAt": "2021-01-08T00:42:22Z",
       "comments": [
         {
           "author": "chris-wood",
@@ -2367,6 +2388,27 @@
           "body": "Both idu and ids are used in the \"info\" / \"transcript\" (naming is not consistent) parameter in HKDF. Having them _nillable_ means the HKDF only relies on the nonces. I don't know if that's a problem.\r\n\r\nMoreover, both idu and ids are used in Sigma.",
           "createdAt": "2020-12-23T10:23:23Z",
           "updatedAt": "2020-12-23T11:18:41Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The default behavior (base mode) is for them to be set to pkU and pkS. Only in customIdentifier mode can they be set to arbitrary strings. We discussed this a bit -- and we decided to allow null values to be set, since it is up to the wrapper protocol to dictate what should represent valid identities for idU and idS. Even if we were to disallow null values, they could still be set to 1-byte values... so the best we can do is to advise for defaulting to base mode unless the implementer really wants to use the custom identifier mode in this manner.",
+          "createdAt": "2021-01-08T00:42:02Z",
+          "updatedAt": "2021-01-08T00:42:02Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Resolved by #102 ",
+          "createdAt": "2021-01-08T00:42:22Z",
+          "updatedAt": "2021-01-08T00:42:22Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Thank you very much for the additional information :)",
+          "createdAt": "2021-01-08T23:27:36Z",
+          "updatedAt": "2021-01-08T23:27:36Z"
         }
       ]
     },
@@ -2462,6 +2504,110 @@
       "updatedAt": "2021-01-06T21:48:01Z",
       "closedAt": "2021-01-06T21:48:01Z",
       "comments": []
+    },
+    {
+      "number": 108,
+      "id": "MDU6SXNzdWU3ODE4MTcwMjQ=",
+      "title": "3DH transcript is incomplete",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/108",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The 3DH transcript used in the key schedule [currently includes only the nonces and identity](https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html#section-4.2.2.2). This means the contents of info1, info2, and the core OPAQUE messages are not mixed into encryption or MAC keys, which seems less than idea. They are included in the transcript that is covered by the MAC, but I don't see why wouldn't *also* include them in the key schedule. \r\n\r\n@hugokraw, can this be improved?",
+      "createdAt": "2021-01-08T03:37:18Z",
+      "updatedAt": "2021-01-08T18:04:45Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The protocol is secure as defined. Adding more elements to the key derivation does not hurt, even if not strictly necessary, but omitting elements is insecure. In particular, including the transcript instead of the currently defined info, may not include identities as these may not be appear in the transcript (are idU and idS necessarily transmitted explicitly as part of the transcript?) and identities are needed in the derivation.\r\nYou could just add a transcript element to the key derivation in addition to \"info\". In this case, the derivation of SK could use transcript3 as currently defined, but the derivation of handshake_secret cannot use transcript2. It will need to define a new value transcript2' that stops before Einfo2. \r\nI am not sure the extra complexity is worth given that the simpler derivation suffices here.\r\n\r\nTypo: The elements marked with * in the protocol description to indicate that they are optional appear as _ in the published draft (e.g., info1_)",
+          "createdAt": "2021-01-08T18:04:44Z",
+          "updatedAt": "2021-01-08T18:04:44Z"
+        }
+      ]
+    },
+    {
+      "number": 109,
+      "id": "MDU6SXNzdWU3ODE4MjA0NDQ=",
+      "title": "Remove optional fields from 3DH",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/109",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The 3DH instantiation currently allows servers to send plaintext info in the second message, clients to send plaintext info in the third message, and clients to send encrypted info in the third message. This seems like too many options. In particular:\r\n\r\n1. Since there is no cryptographic algorithm negotiation as part of the protocol, the primary benefit of info2 is to avoid server encryption in the second flight. This means that applications need to make a determination about what data is sensitive or not. (Servers already have the encryption keys at this point, so they can send anything they need encrypted and avoid giving applications an option.)\r\n2. Clients have the encryption keys necessary to encrypt application info in the third message. Similar to (1), this means applications must make a choice about what data is sensitive. Removing that choice, by folding info3 into einfo3, simplifies things. \r\n3. Sending application info in the third flight does not make much sense to me in general. If clients need to send info in the third flight, it can be encrypted using keys derived from the output of OPAQUE, i.e., the main traffic secret `SK`, rather than keys derived from `handshake_secret`. I can't think of an example where a client would want to send data in the third flight that MUST be processed before the key confirmation message.\r\n\r\nBased on the above, I think we should do the following: remove `info2`, `info3`, and `einfo3` from the protocol. `info1` and `einfo2` are sufficient for clients and servers to safely exchange application info as a preamble to the traffic secret, and all other info can be sent, encrypted, under a key derived from SK. \r\n\r\n@hugokraw, @kevinlewi, what do you think?",
+      "createdAt": "2021-01-08T03:48:00Z",
+      "updatedAt": "2021-01-09T00:54:38Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I am all for this! Especially if there is no decrease in security.",
+          "createdAt": "2021-01-08T04:04:46Z",
+          "updatedAt": "2021-01-08T04:04:46Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I am ok with removing info2 and info3. I would leave einfo3 as there is no security decision to make here. If you are in a setting that requires sending something in the third flow, you use it. If there is no need for it, you don't. So the decision is a purely functional one, not security related. I find it hard to say that no reasonable application will need to use einfo3, , in particular, given that it is the first place where the client can communicate encrypted information to the server. ",
+          "createdAt": "2021-01-08T19:46:53Z",
+          "updatedAt": "2021-01-08T19:46:53Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I find it hard to say that no reasonable application will need to use einfo3, , in particular, given that it is the first place where the client can communicate encrypted information to the server.\r\n\r\nMy claim is that an application which needs to send info in the third message can send it encrypted with a key derived from SK, not from a handshake secret. This means there's effectively two ways to send information in the third flight -- either in einfo3 or in application data -- and it seems simpler to just force applications to use application data. ",
+          "createdAt": "2021-01-08T20:03:11Z",
+          "updatedAt": "2021-01-08T20:03:11Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Kevin, didn't one of your applications used the key as a token rather than to encrypt data as soon as the handshake was done? That would be an example of an application that could use einfo3 (which may or may not be Kevin's case but still a reasonable one).",
+          "createdAt": "2021-01-08T21:47:35Z",
+          "updatedAt": "2021-01-08T21:47:35Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@hugokraw, the application I had in mind relied on the *server encrypting data to the client*, using the shared secret established at the end of the key exchange. einfo3 is used for data being sent from client to server.\r\n\r\nBut, to clarify the original question: Right now, the draft says to compute:\r\n```\r\nKe3 = HKDF-Expand-Label(handshake_secret, \"client enc\", \"\", key_length)\r\n```\r\nand use Ke3 as the encryption key for encrypting einfo3. What I would like to understand is: why do we need to derive this encryption key in this manner; why not just rely on using the shared secret as the encryption key instead?\r\n\r\nIf there are no *security concerns* with doing so, then we would like to remove einfo3 from the specification and defer it to the wrapper protocol that calls OPAQUE, since the wrapper protocol will have access to the shared secret and can choose to encrypt whatever equivalent of einfo3 it wishes.\r\n",
+          "createdAt": "2021-01-08T21:53:26Z",
+          "updatedAt": "2021-01-08T21:53:26Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I assume that by shared secret you mean SK. In that case, anything encrypted under SK must be considered application data and nothing that upon which the server will decide to establish the key or authenticate the client. The encrypted information SHALL NOT be part of the key exchange, If it is part of the key exchange then it needs to be sent in the clear or encrypted under Ke3 (otherwise you break the essential indistinguishability property of the key exchange). \r\nI was thinking of an application where the shared key SK is not intended for use  immediately at the end of the key exchange but later as some form of token  (in which case you may not want SK to be used immediately after the key exchange).",
+          "createdAt": "2021-01-08T22:22:48Z",
+          "updatedAt": "2021-01-08T22:22:48Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I was thinking of an application where the shared key SK is not intended for use immediately at the end of the key exchange but later as some form of token (in which case you may not want SK to be used immediately after the key exchange).\r\n\r\nHmm, couldn't this application derive two keys from SK -- one for sending encrypted info immediately, and another for future usage as you suggest? I think what @kevinlewi is zeroing in on is the desire to remove application-specific knobs from the handshake, since it complicates the specification and implementation.",
+          "createdAt": "2021-01-08T22:31:19Z",
+          "updatedAt": "2021-01-08T22:31:19Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Hmm, couldn't this application derive two keys from SK\r\n\r\nYes, it could. In my eyes it is a less elegant solution and requires the application to understand how to derive these two keys and handle the secure information. \r\n\r\nI agree with reducing as much as possible the security decisions an implementation/application needs to make (such as \"should I  send this in the clear or encrypted\") but whether I need to send something or not as part of the 3rd message (w/o having to decide on encrypting it or not) is a simpler question for the implementation. \r\n\r\nHowever, since this is an issue that does not have immediate security consequences (except for applications that may handle insecurely information that could have been accommodated in einfo3) I will go with your preference.",
+          "createdAt": "2021-01-08T22:55:05Z",
+          "updatedAt": "2021-01-08T22:55:05Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Hello,\r\n\r\nif I may, my two cents.\r\n\r\nAs an [implementer](https://github.com/bytemare/opaque), I find this discussion very interesting and am very happy it takes place. I did not understand the necessity of `info2 `and `info3 ` within the messages as `einfo2` and `einfo3` were available (there would be a redundancy having the plaintext message and encrypted message), and agree that leaving `info2 `and `info3` out would be preferable.\r\n\r\nAs for encrypting data in the third message, it really is a specific need of some applications and their choice to send it at that moment, hence not the protocol's responsibility (so no `einfo3` either). The document could give indications to implementors and users on how to properly use the output shared secret key (e.g. derive per need - encryption, token, etc.), and cite immediate usage for encryption as an example.",
+          "createdAt": "2021-01-09T00:29:12Z",
+          "updatedAt": "2021-01-09T00:54:38Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -6467,20 +6613,62 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTUwNjk2NDQ0",
       "title": "Pin envelope mode to base or customIdentifier.",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/107",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I chose to leave the enumeration and restrict its values to in the text. \r\n\r\nAs discussed, this also makes pkU/pkS mandatory in the core OPAQUE messages.",
       "createdAt": "2021-01-06T22:03:34Z",
-      "updatedAt": "2021-01-06T22:22:05Z",
+      "updatedAt": "2021-01-08T03:25:18Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "758c8a0314775f16f3c02c7741bf282de321f0cb",
       "headRepository": "cfrg/draft-irtf-cfrg-opaque",
       "headRefName": "caw/pin-modes",
       "headRefOid": "db59aa3ac9999cd2f3c340886d522c30e7749942",
+      "closedAt": "2021-01-08T03:25:18Z",
+      "mergedAt": "2021-01-08T03:25:18Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "dca52275f12704ef4b90aa8bbd48331007ffb9c5"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTYzODkzNDI5",
+          "commit": {
+            "abbreviatedOid": "db59aa3"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Great!",
+          "createdAt": "2021-01-07T23:05:56Z",
+          "updatedAt": "2021-01-07T23:05:56Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 110,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTUyMDUyOTkw",
+      "title": "Remove a dead link and in the \"User enumeration\" section, update variable names.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/110",
+      "state": "OPEN",
+      "author": "creemama",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-01-09T04:29:53Z",
+      "updatedAt": "2021-01-09T04:35:42Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "dca52275f12704ef4b90aa8bbd48331007ffb9c5",
+      "headRepository": "creemama/draft-irtf-cfrg-opaque",
+      "headRefName": "dead-link-and-variable-names",
+      "headRefOid": "8c552399d1a3b8aef2505d1ff26b5f27cd40b2a7",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
