@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-10T01:15:06.931365+00:00",
+  "timestamp": "2021-01-12T01:15:32.595080+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -371,9 +371,17 @@
       "labels": [],
       "body": "We might consider standardizing the mechanism by which servers prevent user enumeration attacks. ",
       "createdAt": "2020-05-28T12:29:17Z",
-      "updatedAt": "2020-08-24T17:32:34Z",
+      "updatedAt": "2021-01-11T22:53:21Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "crockeea",
+          "authorAssociation": "NONE",
+          "body": "I support standardizing a method to prevent user enumeration attacks as part of the OPAQUE specification.",
+          "createdAt": "2021-01-11T22:53:21Z",
+          "updatedAt": "2021-01-11T22:53:21Z"
+        }
+      ]
     },
     {
       "number": 23,
@@ -2282,15 +2290,15 @@
       "id": "MDU6SXNzdWU3NTY3MDY2MTc=",
       "title": "Defining SerializeExtensions and DeserializeExtensions",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/97",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "From [here](https://github.com/cfrg/draft-irtf-cfrg-opaque/blame/master/draft-irtf-cfrg-opaque.md#L444-L446): Don't these functions need to be defined somewhere? At least they should sort the extensions by their type, perhaps in increasing order. It seems defining these in the specification is a requirement to producing compatible test vectors.\r\n\r\ncc: @chris-wood ",
       "createdAt": "2020-12-04T00:53:48Z",
-      "updatedAt": "2021-01-06T22:18:35Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-11T15:07:16Z",
+      "closedAt": "2021-01-11T15:07:15Z",
       "comments": [
         {
           "author": "chris-wood",
@@ -2319,6 +2327,13 @@
           "body": "This is addressed by #107, which removes these credential serialize functions. The structs are already in wire format and don't need further serialization.",
           "createdAt": "2021-01-06T22:18:35Z",
           "updatedAt": "2021-01-06T22:18:35Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Closing as resolved.",
+          "createdAt": "2021-01-11T15:07:15Z",
+          "updatedAt": "2021-01-11T15:07:15Z"
         }
       ]
     },
@@ -2541,7 +2556,7 @@
       "labels": [],
       "body": "The 3DH instantiation currently allows servers to send plaintext info in the second message, clients to send plaintext info in the third message, and clients to send encrypted info in the third message. This seems like too many options. In particular:\r\n\r\n1. Since there is no cryptographic algorithm negotiation as part of the protocol, the primary benefit of info2 is to avoid server encryption in the second flight. This means that applications need to make a determination about what data is sensitive or not. (Servers already have the encryption keys at this point, so they can send anything they need encrypted and avoid giving applications an option.)\r\n2. Clients have the encryption keys necessary to encrypt application info in the third message. Similar to (1), this means applications must make a choice about what data is sensitive. Removing that choice, by folding info3 into einfo3, simplifies things. \r\n3. Sending application info in the third flight does not make much sense to me in general. If clients need to send info in the third flight, it can be encrypted using keys derived from the output of OPAQUE, i.e., the main traffic secret `SK`, rather than keys derived from `handshake_secret`. I can't think of an example where a client would want to send data in the third flight that MUST be processed before the key confirmation message.\r\n\r\nBased on the above, I think we should do the following: remove `info2`, `info3`, and `einfo3` from the protocol. `info1` and `einfo2` are sufficient for clients and servers to safely exchange application info as a preamble to the traffic secret, and all other info can be sent, encrypted, under a key derived from SK. \r\n\r\n@hugokraw, @kevinlewi, what do you think?",
       "createdAt": "2021-01-08T03:48:00Z",
-      "updatedAt": "2021-01-09T00:54:38Z",
+      "updatedAt": "2021-01-10T01:56:57Z",
       "closedAt": null,
       "comments": [
         {
@@ -2606,8 +2621,69 @@
           "body": "Hello,\r\n\r\nif I may, my two cents.\r\n\r\nAs an [implementer](https://github.com/bytemare/opaque), I find this discussion very interesting and am very happy it takes place. I did not understand the necessity of `info2 `and `info3 ` within the messages as `einfo2` and `einfo3` were available (there would be a redundancy having the plaintext message and encrypted message), and agree that leaving `info2 `and `info3` out would be preferable.\r\n\r\nAs for encrypting data in the third message, it really is a specific need of some applications and their choice to send it at that moment, hence not the protocol's responsibility (so no `einfo3` either). The document could give indications to implementors and users on how to properly use the output shared secret key (e.g. derive per need - encryption, token, etc.), and cite immediate usage for encryption as an example.",
           "createdAt": "2021-01-09T00:29:12Z",
           "updatedAt": "2021-01-09T00:54:38Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> The document could give indications to implementors and users on how to properly use the output shared secret key (e.g. derive per need - encryption, token, etc.), and cite immediate usage for encryption as an example.\r\n\r\nThanks, I think this is a good suggestion -- perhaps it would be worth adding a short sentence/paragraph to explain this.",
+          "createdAt": "2021-01-10T01:56:56Z",
+          "updatedAt": "2021-01-10T01:56:56Z"
         }
       ]
+    },
+    {
+      "number": 111,
+      "id": "MDU6SXNzdWU3ODMyODI1NTA=",
+      "title": "Encryption in the AKE section",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/111",
+      "state": "OPEN",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "What encryption method should we use to encrypt the `einfo2` field of the AKE section?\r\n\r\nI propose that we go with a simple XOR + HKDF based approach. Namely, take the current `Ke2` encryption key, feed it as input to `HKDF-expand`, and xor it with the plaintext to be encrypted. We can obtain the length parameter for HKDF-expand by simply measuring the length of the plaintext (correspondingly, the length of the ciphertext when we need to decrypt).\r\n\r\nThis XOR-based encryption method does not provide integrity, and only works for a single use of the `Ke2` encryption key, but I believe this is OK because `Ke2` only gets used exactly once anyway, and integrity is already provided by the MAC that is computed using `Km2`.\r\n\r\nIn particular, I want to avoid using more heavyweight but traditional algorithms like AES-GCM-256 / ChaCha20-Poly1305 because this increases complexity of the specification.\r\n\r\nThoughts? @hugokraw @chris-wood ",
+      "createdAt": "2021-01-11T11:15:35Z",
+      "updatedAt": "2021-01-11T17:00:56Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Several comments:\r\n- While using GCM seems heavyweight relative to simple xor, some implementations may prefer it to xor since they already have the code that uses GCM for handshake traffic protection, e.g., borrowed from TLS. But fixing the encryption method avoids negotiation which is a real simplification. If  @chris-wood is ok with this, then I am ok with it too.\r\n- One needs AEAD here. The fact that it is a one-time key does not replace that requirement. For example, if an application were to send some negotiation information under einfo2, an attacker could flip some bits to change the offered security parameters.\r\n- The question that remains is whether to add an HMAC on top of the xor-generated ciphertext for achieving authenticated encryption or to count instead on the 3DH MAC for that purpose. Doing the latter would be secure and would indeed eliminate the need for the additional HMAC (and the derivation of an additional HMAC key). I do dislike this idea on \"principle\" grounds. I always advocate the principle that one should not use the same component for two different purposes, see for example https://mailarchive.ietf.org/arch/msg/cfrg/5ithq2sRpf7QZZ_pk_jrdGJwy3k/\r\nIn the case at hand, I can think of a future variant of the protocol where the server sends the MAC on a 4th flow, thus removing the MAC protection of  einfo2 (this case is not completely hypothetical: Stas and I have a variant of OPAQUE with some interesting properties that just does that). However, if you guys think this consideration is too academic and a note on it would suffice then I can go with it. \r\n- One has to be careful about determining the length of the plaintext to be encrypted; ambiguity in determining length leads to some attacks in some cases.",
+          "createdAt": "2021-01-11T15:58:43Z",
+          "updatedAt": "2021-01-11T15:58:43Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks for the comments @hugokraw!\r\n\r\n> The question that remains is whether to add an HMAC on top of the xor-generated ciphertext for achieving authenticated encryption or to count instead on the 3DH MAC for that purpose.\r\n\r\nI agree with these points. However, I am leaning towards relying on the 3DH MAC and omitting the \"extra HMAC on top of the xor-generated ciphertext\", although I think we can (and should) definitely add a note in the description of the encryption of einfo2 that we critically rely on the 3DH MAC for integrity (and that future amendments should take this into account when modifying the protocol).\r\n\r\nThe main reason why I would like to avoid adding another HMAC is that it seems wasteful in terms of bandwidth. This will increase the message length by another 16 or 32 bytes, even if einfo2 is only 1 byte long -- and in the case where einfo2 is 0 bytes long, do we still generate the HMAC? If so, it seems wasteful, and if not, then implementations must take care to check for the length of einfo2 and case on whether or not it is empty. While doable, it means that when we generate test vectors for implementations to match against, we may need to generate an extra set of test vectors that ensure that implementations explicitly do this check.",
+          "createdAt": "2021-01-11T16:39:52Z",
+          "updatedAt": "2021-01-11T16:39:52Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "If einfo2 is omitted then no need for the HMAC. I am not sure how crucial the bandwidth issue is and if it is enough of a reason to  make this decision (I would prefer to have the HMAC in the spec and havea note saying that if bandwidth is critical enough then the HMAC can be skipped, assuming the 3DH MAC stays in that same flow. If we do decide to forgo the HMAC all together then there should be a note on the essential need for the 3DH MAC in the same flow AND that no action should be taken on the basis of information encrypted under einfo2 before that 3DH MAC is verified.",
+          "createdAt": "2021-01-11T17:00:55Z",
+          "updatedAt": "2021-01-11T17:00:55Z"
+        }
+      ]
+    },
+    {
+      "number": 112,
+      "id": "MDU6SXNzdWU3ODM3NjcyMTA=",
+      "title": "Suggested Changes 1/11/21",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/112",
+      "state": "OPEN",
+      "author": "crockeea",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "I read through the draft (https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html on 1/11/21), and have a few comments.\r\n\r\n-\tAdd `pwdU` to section 1.2\r\n-\tAdd OPRF `KeyGen()` to section 2 (referenced in section 3.2.2.2)\r\n-\tThe type of `mode` in the `InnerEnvelope` struct should be `EnvelopeMode`\r\n-\tSection 3.1: The text above the definition of the `Envelope` and `InnerEnvelope` structs says, \u201cThese credentials are embedded into the following structure\u2026\u201d. I therefore expected to see a `SecretCredentials` struct and `CleartextCredentials` struct in either `Envelope` or `InnerEnvelope`. There is a field for \u201cencrypted_creds\u201d, which could correspond to the encryption of the `SecretCredentials`, but there still seems to be no place where `CleartextCredentials` can be embedded into these structs.\r\n-\tBe consistent about the use of parens for functions which output multiple values (see protocol diagrams at top of section 3.2 and at the top of 3.3)\r\n-\tNotation for kU: section 1.2 says \u201ckU refers to U's private OPRF key\u201d. Without any other context, I expect this to be something generated by the user, and known only to the user. But in reality, kU is a per-user key generated by the server, and not revealed to the client. Is there a different way to describe `kU` to avoid this potential confusion?\r\n-\tOPRF blind is referred to as both `blind` and `r`. Make this consistent for clarity.\r\n-\tNeed to define the `Credentials` structure mentioned at the end of section 3.1: fields of this struct are referenced in section 3.2.2.3, but never defined.\r\n-\tSection 3.2.2.3 step 7: uses `len(pt)`, but I\u2019m not sure what `pt` is supposed to be/refer to. Perhaps `secret_creds`?\r\n-\tSection 3.2.2.3 step 11: \u201cCreate InnerEnvelope contents\u201d. I read this as \u201cCreate [an unnamed] InnerEnvelope body\u2026.\u201d, but you apparently intended to name the struct `contents`, since you then refer to it in step 12. If you gave this a non-English-word name, this would be clearer, since there are no typesetting clues.\r\n-\tIs it really necessary to define a variant of `CleartextCredentials`? Why not always use the larger struct? This is only included as AAD; it is not actually transmitted or stored. It\u2019s adding a lot of extra complexity with no apparent benefit. Implementations can always used a short fixed value if they would otherwise want to use the truncated `CleartextCredentials`.\r\n-\tThe type of OPRF group elements isn\u2019t consistent: in section 3.2.1, it\u2019s an (undefined!) type `SerializedElement data`; in section 3.3.1, it\u2019s `opaque data<1..2^16-1>`\r\n-\tSection 3.3.2.3: The \u201cOutputs\u201d list a `SecretCredentials` and an export key, but the diagram shows that RecoverCredentials outputs (skU, pkS, export_key)\r\n-\tSuggestion: incorporate generic AKE messages into the protocol in section 3.3. It would be nice to have a complete diagram of the generic protocol. Currently, you have a partial diagram in section 3.3 and a textual description of the full protocol in the intro of section 4.\r\n-\tSection 4 intro: \u201cHowever, an instantiation where both AKE and data encryption are quantum safe\u2026\u201d Is this encryption referring to the EnvU encryption defined in section 3.2.2.3? If so, isn\u2019t the encryption already quantum safe? If that\u2019s the case, I\u2019d change this to \u201cHowever, an instantiation where AKE is quantum safe\u2026\u201d to avoid confusion.\r\n-\tSection 4.1: struct `HkdfLabel` contains the field opaque label<8..255> = \"OPAQUE \" + Label; Is `Label` required to be non-null, or is the string required to be null-terminated? The string \u201cOPAQUE \u201c has length 7, so I\u2019m wondering why the minimum field size is 8. (I see that this is consistent with TLS1.3, but I don\u2019t see an explanation there either.)\r\n-\tSection 4.2.1: This section defines, e.g., ` KE1 = credential_request, nonceU, info1*, epkU`, so that KE1 contains the credential_request. However, at the top of section 4, the high-level protocol shows credential_request being sent in addition to KE1. This is another reason it would be helpful to have a complete diagram of the generic protocol (with, e.g., a generic 3-message AKE). For this particular issue, I think KE1 should only include AKE message components; it should not include the credential_request. Similarly for KE2 and section 4.3.1.\r\n-\tSection 5: \u201cFuture specifications \u2026 MAY introduce other AKE instantiations.\u201d Also allow for/mention the possibility of defining alternate OPRFs. For example, https://eprint.iacr.org/2020/1532 gives a lattice-based (and hence PQ) OPRF.\r\n-\tSection 6.6: What does \u201cskipping the key exchange part\u201d mean? Does it mean somehow truncating the protocol/skipping the AKE entirely? Or does it mean not using the exchanged key after a successful authentication? In general, I\u2019m not sure what I would have to do to violate this section, which means I could easily violate it without knowing.\r\n",
+      "createdAt": "2021-01-11T22:58:23Z",
+      "updatedAt": "2021-01-11T22:58:23Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -6655,26 +6731,105 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTUyMDUyOTkw",
       "title": "Remove a dead link and in the \"User enumeration\" section, update variable names.",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/110",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "creemama",
-      "authorAssociation": "NONE",
+      "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2021-01-09T04:29:53Z",
-      "updatedAt": "2021-01-09T04:35:42Z",
+      "updatedAt": "2021-01-11T15:06:53Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "dca52275f12704ef4b90aa8bbd48331007ffb9c5",
       "headRepository": "creemama/draft-irtf-cfrg-opaque",
       "headRefName": "dead-link-and-variable-names",
-      "headRefOid": "8c552399d1a3b8aef2505d1ff26b5f27cd40b2a7",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "90d5a7a734734de2bf13ad2ea6880c00afa3a6c8",
+      "closedAt": "2021-01-11T15:06:53Z",
+      "mergedAt": "2021-01-11T15:06:53Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "268ec3d685b1d57091ba40eb3bdfce1507e09cfc"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY1NDMyNTMx",
+          "commit": {
+            "abbreviatedOid": "8c55239"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-01-11T14:58:51Z",
+          "updatedAt": "2021-01-11T15:03:50Z",
+          "comments": [
+            {
+              "originalPosition": 39,
+              "body": "```suggestion\r\nsimulating a CredentialResponse for non-existing users.\r\n```",
+              "createdAt": "2021-01-11T14:58:51Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            },
+            {
+              "originalPosition": 40,
+              "body": "```suggestion\r\nNote that if the same CredentialRequest is received\r\n```",
+              "createdAt": "2021-01-11T14:59:55Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            },
+            {
+              "originalPosition": 44,
+              "body": "```suggestion\r\nthe construction of envU to all the key material in envU.\r\n```",
+              "createdAt": "2021-01-11T15:00:53Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            },
+            {
+              "originalPosition": 46,
+              "body": "```suggestion\r\n```",
+              "createdAt": "2021-01-11T15:01:00Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            },
+            {
+              "originalPosition": 50,
+              "body": "```suggestion\r\nUpon receiving a CredentialRequest for a non-existing\r\n```",
+              "createdAt": "2021-01-11T15:01:18Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            },
+            {
+              "originalPosition": 55,
+              "body": "```suggestion\r\nCredentialResponse carrying Z=M^kU and envU, where the latter is computed as follows.\r\nrwdU is set to kU' and secret_creds is set to the all-zero string (of the\r\n```",
+              "createdAt": "2021-01-11T15:03:07Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            },
+            {
+              "originalPosition": 64,
+              "body": "```suggestion\r\nAn attacker that attempts authentication with the same CredentialRequest twice and receives\r\n```",
+              "createdAt": "2021-01-11T15:03:46Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY1NDM4NzE2",
+          "commit": {
+            "abbreviatedOid": "e249729"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-11T15:05:13Z",
+          "updatedAt": "2021-01-11T15:05:13Z",
+          "comments": [
+            {
+              "originalPosition": 64,
+              "body": "```suggestion\r\nAn attacker that attempts authentication with the same CredentialRequest twice and receives\r\n```",
+              "createdAt": "2021-01-11T15:05:13Z",
+              "updatedAt": "2021-01-11T15:05:18Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
