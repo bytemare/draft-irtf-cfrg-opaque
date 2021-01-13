@@ -282,6 +282,11 @@ Table of Contents
    "(kU, _) = KeyGen()" to denote use of this function for generating
    secret key "kU" (and discarding the corresponding public key).
 
+   We use the types "SerializedElement" and "SerializedScalar" as
+   defined in [I-D.irtf-cfrg-voprf], along with serialization functions
+   "SerializeElement", "DeserializeElement", "SerializeScalar", and
+   "DeserializeScalar".
+
 3.  Core Protocol
 
    OPAQUE consists of two stages: registration and authenticated key
@@ -555,10 +560,19 @@ Steps:
    See Section 3.4 for details about the output export_key usage.
 
    Upon completion of this function, the client MUST send "record" to
-   the server.  The server then stores the tuple "(envU, pkU, kU, pkS,
-   skS)", where "envU" and "pkU" are obtained from "record".  If "skS"
-   and "pkS" are used for multiple users, the server can store these
-   values separately and omit them from the user's record.
+   the server.
+
+3.2.2.4.  Credential File
+
+   The server then constructs and stores the "CredentialFile" object,
+   where "envU" and "pkU" are obtained from "record", and "kU" is
+   retained from the output of "CreateRegistrationResponse".
+
+   struct {
+       SerializedScalar kU;
+       opaque pkU<1..2^16-1>;
+       Envelope envU;
+   } CredentialFile;
 
 3.3.  Online authenticated key exchange stage
 
@@ -647,21 +661,20 @@ Steps:
 
 3.3.2.2.  CreateCredentialResponse
 
-   CreateCredentialResponse(request, pkS, kU, envU)
+CreateCredentialResponse(request, pkS, credentialFile)
 
-   Input:
-   - request, a CredentialRequest structure
-   - pkS, the public key of the server
-   - kU, the OPRF key associated with idU
-   - envU, the Envelope associated with idU
+Input:
+- request, a CredentialRequest structure
+- pkS, the public key of the server
+- credentialFile, the server's output from registration (see {{credential-file}})
 
-   Output:
-   - response, a CredentialResponse structure
+Output:
+- response, a CredentialResponse structure
 
-   Steps:
-   1. Z = Evaluate(kU, request.data)
-   2. Create CredentialResponse response with (Z, pkS, envU)
-   3. Output response
+Steps:
+1. Z = Evaluate(DeserializeScalar(credentialFile.kU), request.data)
+2. Create CredentialResponse response with (Z, pkS, credentialFile.envU)
+3. Output response
 
 3.3.2.3.  RecoverCredentials
 
