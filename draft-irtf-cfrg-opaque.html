@@ -268,10 +268,6 @@ figcaption, caption {
     vertical-align: text-bottom;
     padding-bottom: 8px;
   }
-  table {
-    display: inline-block;
-    overflow-x: auto;
-  }
 }
 
 /* aside, blockquote */
@@ -342,17 +338,23 @@ table p {
 /* pilcrow */
 a.pilcrow {
   margin-left: 3px;
-  visibility: hidden;
+  opacity: 0.2;
   user-select: none;
 }
 a.pilcrow[href] { color: #ddd; }
 a.pilcrow[href]:hover { text-decoration: none; }
 @media screen {
   :hover > a.pilcrow {
-    visibility: visible;
+    opacity: 1;
   }
-  a.pilcrow:hover {
+  a.pilcrow[href]:hover {
+    color: #bbb;
     background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
   }
 }
 
@@ -832,7 +834,7 @@ address div.right {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Krawczyk, et al.</td>
-<td class="center">Expires 15 July 2021</td>
+<td class="center">Expires 17 July 2021</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -845,12 +847,12 @@ address div.right {
 <dd class="internet-draft">draft-irtf-cfrg-opaque-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2021-01-11" class="published">11 January 2021</time>
+<time datetime="2021-01-13" class="published">13 January 2021</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Informational</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2021-07-15">15 July 2021</time></dd>
+<dd class="expires"><time datetime="2021-07-17">17 July 2021</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -907,7 +909,7 @@ instantiations in different authenticated key exchange protocols.<a href="#secti
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 15 July 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 17 July 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -935,143 +937,143 @@ instantiations in different authenticated key exchange protocols.<a href="#secti
         <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
 <a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
         </h2>
-<nav class="toc"><ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.1">
+<nav class="toc"><ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.1">
             <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a><a href="#section-toc.1-1.1.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.1.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.1.2.1">
                 <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="xref">1.1</a>.  <a href="#name-requirements-notation" class="xref">Requirements Notation</a><a href="#section-toc.1-1.1.2.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.1.2.2">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.1.2.2">
                 <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="xref">1.2</a>.  <a href="#name-notation" class="xref">Notation</a><a href="#section-toc.1-1.1.2.2.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.2">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.2">
             <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-cryptographic-protocol-and-" class="xref">Cryptographic Protocol and Algorithm Dependencies</a><a href="#section-toc.1-1.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.3">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.3">
             <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-core-protocol" class="xref">Core Protocol</a><a href="#section-toc.1-1.3.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.3.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-credential-types-and-envelo" class="xref">Credential types and envelope construction</a><a href="#section-toc.1-1.3.2.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.2">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.2">
                 <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-offline-registration-stage" class="xref">Offline registration stage</a><a href="#section-toc.1-1.3.2.2.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.3.2.2.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.3.2.2.2.1">
                     <p id="section-toc.1-1.3.2.2.2.1.1"><a href="#section-3.2.1" class="xref">3.2.1</a>.  <a href="#name-registration-messages" class="xref">Registration messages</a><a href="#section-toc.1-1.3.2.2.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.2.2.2">
+                  <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.2.2.2">
                     <p id="section-toc.1-1.3.2.2.2.2.1"><a href="#section-3.2.2" class="xref">3.2.2</a>.  <a href="#name-registration-functions" class="xref">Registration functions</a><a href="#section-toc.1-1.3.2.2.2.2.1" class="pilcrow">¶</a></p>
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.3">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.3">
                 <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-online-authenticated-key-ex" class="xref">Online authenticated key exchange stage</a><a href="#section-toc.1-1.3.2.3.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.3.2.3.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.3.2.3.2.1">
                     <p id="section-toc.1-1.3.2.3.2.1.1"><a href="#section-3.3.1" class="xref">3.3.1</a>.  <a href="#name-authenticated-key-exchange-" class="xref">Authenticated key exchange messages</a><a href="#section-toc.1-1.3.2.3.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.3.2.2">
+                  <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.3.2.2">
                     <p id="section-toc.1-1.3.2.3.2.2.1"><a href="#section-3.3.2" class="xref">3.3.2</a>.  <a href="#name-authenticated-key-exchange-f" class="xref">Authenticated key exchange functions</a><a href="#section-toc.1-1.3.2.3.2.2.1" class="pilcrow">¶</a></p>
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.4">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.4">
                 <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-export-key" class="xref">Export Key</a><a href="#section-toc.1-1.3.2.4.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.5">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.3.2.5">
                 <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="xref">3.5</a>.  <a href="#name-ake-execution-and-party-ide" class="xref">AKE Execution and Party Identities</a><a href="#section-toc.1-1.3.2.5.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.4">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.4">
             <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-authenticated-key-exchange-p" class="xref">Authenticated Key Exchange Protocol Instantiations</a><a href="#section-toc.1-1.4.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.4.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.4.2.1">
                 <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-key-schedule-utility-functi" class="xref">Key Schedule Utility Functions</a><a href="#section-toc.1-1.4.2.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.4.2.2">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.4.2.2">
                 <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-instantiation-with-hmqv-and" class="xref">Instantiation with HMQV and 3DH</a><a href="#section-toc.1-1.4.2.2.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.4.2.2.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.4.2.2.2.1">
                     <p id="section-toc.1-1.4.2.2.2.1.1"><a href="#section-4.2.1" class="xref">4.2.1</a>.  <a href="#name-hmqv-and-3dh-protocol-messa" class="xref">HMQV and 3DH protocol messages</a><a href="#section-toc.1-1.4.2.2.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="ulEmpty toc compact" id="section-toc.1-1.4.2.2.2.2">
+                  <li class="toc ulEmpty compact" id="section-toc.1-1.4.2.2.2.2">
                     <p id="section-toc.1-1.4.2.2.2.2.1"><a href="#section-4.2.2" class="xref">4.2.2</a>.  <a href="#name-hmqv-and-3dh-key-derivation" class="xref">HMQV and 3DH key derivation</a><a href="#section-toc.1-1.4.2.2.2.2.1" class="pilcrow">¶</a></p>
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.4.2.3">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.4.2.3">
                 <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="xref">4.3</a>.  <a href="#name-instantiation-with-sigma-i" class="xref">Instantiation with SIGMA-I</a><a href="#section-toc.1-1.4.2.3.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.4.2.3.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.4.2.3.2.1">
                     <p id="section-toc.1-1.4.2.3.2.1.1"><a href="#section-4.3.1" class="xref">4.3.1</a>.  <a href="#name-sigma-protocol-messages" class="xref">SIGMA protocol messages</a><a href="#section-toc.1-1.4.2.3.2.1.1" class="pilcrow">¶</a></p>
 </li>
-                  <li class="ulEmpty toc compact" id="section-toc.1-1.4.2.3.2.2">
+                  <li class="toc ulEmpty compact" id="section-toc.1-1.4.2.3.2.2">
                     <p id="section-toc.1-1.4.2.3.2.2.1"><a href="#section-4.3.2" class="xref">4.3.2</a>.  <a href="#name-sigma-key-derivation" class="xref">SIGMA key derivation</a><a href="#section-toc.1-1.4.2.3.2.2.1" class="pilcrow">¶</a></p>
 </li>
                 </ul>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.5">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.5">
             <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-configurations" class="xref">Configurations</a><a href="#section-toc.1-1.5.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.6">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.6">
             <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a><a href="#section-toc.1-1.6.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.6.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.6.2.1">
                 <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="xref">6.1</a>.  <a href="#name-related-analysis" class="xref">Related analysis</a><a href="#section-toc.1-1.6.2.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.2">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.2">
                 <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="xref">6.2</a>.  <a href="#name-envelope-encryption" class="xref">Envelope encryption</a><a href="#section-toc.1-1.6.2.2.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.3">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.3">
                 <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="xref">6.3</a>.  <a href="#name-configuration-choice" class="xref">Configuration choice</a><a href="#section-toc.1-1.6.2.3.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.4">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.4">
                 <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="xref">6.4</a>.  <a href="#name-static-diffie-hellman-oracl" class="xref">Static Diffie-Hellman oracles</a><a href="#section-toc.1-1.6.2.4.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.5">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.5">
                 <p id="section-toc.1-1.6.2.5.1"><a href="#section-6.5" class="xref">6.5</a>.  <a href="#name-input-validation" class="xref">Input validation</a><a href="#section-toc.1-1.6.2.5.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.6">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.6">
                 <p id="section-toc.1-1.6.2.6.1"><a href="#section-6.6" class="xref">6.6</a>.  <a href="#name-user-authentication-versus-" class="xref">User authentication versus Authenticated Key Exchange</a><a href="#section-toc.1-1.6.2.6.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.7">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.7">
                 <p id="section-toc.1-1.6.2.7.1"><a href="#section-6.7" class="xref">6.7</a>.  <a href="#name-oprf-hardening" class="xref">OPRF hardening</a><a href="#section-toc.1-1.6.2.7.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.8">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.8">
                 <p id="section-toc.1-1.6.2.8.1"><a href="#section-6.8" class="xref">6.8</a>.  <a href="#name-user-and-server-identities" class="xref">User and server identities</a><a href="#section-toc.1-1.6.2.8.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.9">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.9">
                 <p id="section-toc.1-1.6.2.9.1"><a href="#section-6.9" class="xref">6.9</a>.  <a href="#name-user-enumeration" class="xref">User enumeration</a><a href="#section-toc.1-1.6.2.9.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.10">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.6.2.10">
                 <p id="section-toc.1-1.6.2.10.1"><a href="#section-6.10" class="xref">6.10</a>. <a href="#name-password-salt-and-storage-i" class="xref">Password salt and storage implications</a><a href="#section-toc.1-1.6.2.10.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.7">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.7">
             <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-iana-considerations" class="xref">IANA Considerations</a><a href="#section-toc.1-1.7.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.8">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.8">
             <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-references" class="xref">References</a><a href="#section-toc.1-1.8.1" class="pilcrow">¶</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.8.2.1">
+<ul class="toc ulEmpty compact">
+<li class="toc ulEmpty compact" id="section-toc.1-1.8.2.1">
                 <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="xref">8.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a><a href="#section-toc.1-1.8.2.1.1" class="pilcrow">¶</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.8.2.2">
+              <li class="toc ulEmpty compact" id="section-toc.1-1.8.2.2">
                 <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="xref">8.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a><a href="#section-toc.1-1.8.2.2.1" class="pilcrow">¶</a></p>
 </li>
             </ul>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.9">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.9">
             <p id="section-toc.1-1.9.1"><a href="#section-appendix.a" class="xref">Appendix A</a>.  <a href="#name-acknowledgments" class="xref">Acknowledgments</a><a href="#section-toc.1-1.9.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="ulEmpty toc compact" id="section-toc.1-1.10">
+          <li class="toc ulEmpty compact" id="section-toc.1-1.10">
             <p id="section-toc.1-1.10.1"><a href="#section-appendix.b" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a><a href="#section-toc.1-1.10.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
@@ -1095,7 +1097,7 @@ Moreover, plaintext password authentication over TLS is also vulnerable
 to TLS failures, including many forms of PKI attacks, certificate
 mishandling, termination outside the security perimeter, visibility
 to middle boxes, and more.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">Asymmetric (or augmented) Password Authenticated Key Exchange (aPAKE)
+<p id="section-1-2">Asymmetric (or Augmented) Password Authenticated Key Exchange (aPAKE)
 protocols are designed to provide password authentication and
 mutually authenticated key exchange in a client-server setting without relying on PKI (except
 during user/password registration) and without disclosing passwords
@@ -1116,7 +1118,7 @@ server compromise.<a href="#section-1-2" class="pilcrow">¶</a></p>
 pre-computation attacks. In particular, none of these protocols can
 use the standard technique against pre-computation that combines
 <em>secret</em> random values ("salt") into the one-way password mappings.
-Either these protocols do not use salt at all or, if they do, they
+Either these protocols do not use a salt at all or, if they do, they
 transmit the salt from server to user in the clear, hence losing the
 secrecy of the salt and its defense against pre-computation. Furthermore,
 transmitting the salt may require additional protocol messages.<a href="#section-1-3" class="pilcrow">¶</a></p>
@@ -1137,7 +1139,7 @@ dictionary attacks are not possible without breaking into a threshold
 of servers (such a distributed solution requires no change or awareness
 on the client side relative to a single-server implementation).<a href="#section-1-4" class="pilcrow">¶</a></p>
 <p id="section-1-5">OPAQUE is defined and proven as the composition of two functionalities:
-an Oblivious PRF (OPRF) and an authenticated key-exchange (AKE) protocol. It can be seen
+an oblivious pseudorandom function (OPRF) and an authenticated key-exchange (AKE) protocol. It can be seen
 as a "compiler" for transforming any suitable AKE protocol into a secure
 aPAKE protocol. (See <a href="#security-considerations" class="xref">Section 6</a> for requirements of the
 OPRF and AKE protocols.) This document specifies OPAQUE instantiations based
@@ -1186,18 +1188,16 @@ key.<a href="#section-1.2-2.4" class="pilcrow">¶</a>
 described in <span>[<a href="#RFC8017" class="xref">RFC8017</a>]</span>. Note that these functions operate on byte strings in
 big-endian byte order.<a href="#section-1.2-2.5" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.2-2.6">concat(x0, ..., xN): Concatenation of byte strings.
+          <li class="normal" id="section-1.2-2.6">concat(x0, ..., xN): Concatenate byte strings. For example,
 <code>concat(0x01, 0x0203, 0x040506) = 0x010203040506</code>.<a href="#section-1.2-2.6" class="pilcrow">¶</a>
 </li>
           <li class="normal" id="section-1.2-2.7">random(n): Generate a random byte string of length <code>n</code> bytes.<a href="#section-1.2-2.7" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.2-2.8">
-            <code>xor(a,b)</code>: XOR of byte strings; <code>xor(0xF0F0, 0x1234) = 0xE2C4</code>.
+          <li class="normal" id="section-1.2-2.8">xor(a,b): Apply XOR to byte strings. For example, <code>xor(0xF0F0, 0x1234) = 0xE2C4</code>.
 It is an error to call this function with two arguments of unequal
 length.<a href="#section-1.2-2.8" class="pilcrow">¶</a>
 </li>
-          <li class="normal" id="section-1.2-2.9">
-            <code>ct_equal(a, b)</code>: Return <code>true</code> if <code>a</code> is equal to <code>b</code>, and false otherwise.
+          <li class="normal" id="section-1.2-2.9">ct_equal(a, b): Return <code>true</code> if <code>a</code> is equal to <code>b</code>, and false otherwise.
 This function is constant-time in the length of <code>a</code> and <code>b</code>, which are assumed
 to be of equal length, irrespective of the values <code>a</code> or <code>b</code>.<a href="#section-1.2-2.9" class="pilcrow">¶</a>
 </li>
@@ -1223,13 +1223,13 @@ OPAKE was taken.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
 <li class="normal" id="section-2-2.1">
           <p id="section-2-2.1.1">Oblivious Pseudorandom Function (OPRF, <span>[<a href="#I-D.irtf-cfrg-voprf" class="xref">I-D.irtf-cfrg-voprf</a>]</span>):<a href="#section-2-2.1.1" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-2-2.1.2.1">Blind(x): Convert input <code>x</code> into an Element of the OPRF group, randomize it
-by some Scalar <code>r</code>, producing <code>M</code>, and output (<code>r</code>, <code>M</code>).<a href="#section-2-2.1.2.1" class="pilcrow">¶</a>
+<li class="normal" id="section-2-2.1.2.1">Blind(x): Convert input <code>x</code> into an element of the OPRF group, randomize it
+by some scalar <code>r</code>, producing <code>M</code>, and output (<code>r</code>, <code>M</code>).<a href="#section-2-2.1.2.1" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-2-2.1.2.2">Evaluate(k, M): Evaluate input element <code>M</code> using private key <code>k</code>, yielding
 output element <code>Z</code>.<a href="#section-2-2.1.2.2" class="pilcrow">¶</a>
 </li>
-            <li class="normal" id="section-2-2.1.2.3">Unblind(r, Z): Remove random Scalar <code>r</code> from <code>Z</code>, yielding output <code>N</code>.<a href="#section-2-2.1.2.3" class="pilcrow">¶</a>
+            <li class="normal" id="section-2-2.1.2.3">Unblind(r, Z): Remove random scalar <code>r</code> from <code>Z</code>, yielding output <code>N</code>.<a href="#section-2-2.1.2.3" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-2-2.1.2.4">Finalize(x, N, info): Compute the OPRF output using input <code>x</code>, <code>N</code>, and domain
 separation tag <code>info</code>.<a href="#section-2-2.1.2.4" class="pilcrow">¶</a>
@@ -1413,8 +1413,8 @@ in a <code>Credentials</code> object with the following named fields:<a href="#s
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-offline-registration-stage" class="section-name selfRef">Offline registration stage</a>
         </h3>
 <p id="section-3.2-1">Registration is executed between a user U (running on a client machine) and a
-server S. It is assumed the server can identify the user and the client can
-authenticate the server during this registration phase. This is the only part
+server S. It is assumed S can identify U and the client can
+authenticate S during this registration phase. This is the only part
 in OPAQUE that requires an authenticated channel, either physical, out-of-band,
 PKI-based, etc. This section describes the registration flow, message encoding,
 and helper functions. Moreover, U has a key pair (skU, pkU) for an AKE protocol
@@ -1427,22 +1427,22 @@ multiple users. These steps can happen offline, i.e., before the registration ph
 Once complete, the registration process proceeds as follows:<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <div class="artwork art-text alignLeft" id="section-3.2-3">
 <pre>
-      Client (pwdU, creds)                       Server (skS, pkS)
-  -----------------------------------------------------------------
- request, blind = CreateRegistrationRequest(pwdU)
+  Client (pwdU, creds)                             Server (skS, pkS)
+  ------------------------------------------------------------------
+  request, blind = CreateRegistrationRequest(pwdU)
 
-                                   request
-                              -----------------&gt;
+                               request
+                      -------------------------&gt;
 
-            (response, kU) = CreateRegistrationResponse(request, pkS)
+             response, kU = CreateRegistrationResponse(request, pkS)
 
-                                   response
-                              &lt;-----------------
+                               response
+                      &lt;-------------------------
 
- record, export_key = FinalizeRequest(pwdU, creds, blind, response)
+  record, export_key = FinalizeRequest(pwdU, creds, blind, response)
 
-                                   record
-                              ------------------&gt;
+                                record
+                      -------------------------&gt;
 
 </pre><a href="#section-3.2-3" class="pilcrow">¶</a>
 </div>
@@ -1502,7 +1502,7 @@ struct {
             <dt id="section-3.2.1-6.1">
 envU  </dt>
             <dd style="margin-left: 1.5em" id="section-3.2.1-6.2">
-              <p id="section-3.2.1-6.2.1">The user's <code>Envelope</code> structure<a href="#section-3.2.1-6.2.1" class="pilcrow">¶</a></p>
+              <p id="section-3.2.1-6.2.1">The user's <code>Envelope</code> structure.<a href="#section-3.2.1-6.2.1" class="pilcrow">¶</a></p>
 </dd>
             <dd class="break"></dd>
 <dt id="section-3.2.1-6.3">
@@ -1533,12 +1533,12 @@ Input:
 
 Output:
 - request, a RegistrationRequest structure
-- r, an OPRF Scalar value
+- blind, an OPRF scalar value
 
 Steps:
-1. (r, M) = Blind(pwdU)
+1. (blind, M) = Blind(pwdU)
 2. Create RegistrationRequest request with M
-3. Output (request, r)
+3. Output (request, blind)
 </pre><a href="#section-3.2.2.1-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -1558,13 +1558,12 @@ Input:
 
 Output:
 - response, a RegistrationResponse structure
-- kU, Per-user OPRF key
+- kU, the per-user OPRF key
 
 Steps:
 1. (kU, _) = KeyGen()
 2. Z = Evaluate(kU, request.data)
-3. Create RegistrationResponse response with
-     (Z, pkS)
+3. Create RegistrationResponse response with (Z, pkS)
 4. Output (response, kU)
 </pre><a href="#section-3.2.2.2-1" class="pilcrow">¶</a>
 </div>
@@ -1587,11 +1586,11 @@ Parameters:
 Input:
 - pwdU, an opaque byte string containing the user's password
 - creds, a Credentials structure
-- blind, an OPRF Scalar value
+- blind, an OPRF scalar value
 - response, a RegistrationResponse structure
 
 Output:
-- envU, the user's Envelope structure
+- record, a RegistrationUpload structure
 - export_key, an additional key
 
 Steps:
@@ -1644,22 +1643,23 @@ shared secret key.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
 <p id="section-3.3-2">This section describes the message flow, encoding, and helper functions used in this stage.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
 <div class="artwork art-text alignLeft" id="section-3.3-3">
 <pre>
-       Client (pwdU)                    Server (skS, pkS, kU, envU)
-  -----------------------------------------------------------------
-   request, blind = CreateCredentialRequest(pwdU)
+  Client (pwdU)                          Server (skS, pkS, kU, envU)
+  ------------------------------------------------------------------
+  request, blind = CreateCredentialRequest(pwdU)
 
-                                   request
-                              -----------------&gt;
+                               request
+                      -------------------------&gt;
 
-   response = CreateCredentialResponse(request, pkS, kU, envU)
+         response = CreateCredentialResponse(request, pkS, kU, envU)
 
-                                   response
-                              &lt;-----------------
+                               response
+                      &lt;-------------------------
 
   skU, pkS, export_key = RecoverCredentials(pwdU, blind, response)
 
-                            (AKE with credentials)
-                              &lt;================&gt;
+                        (AKE with credentials)
+                      &lt;========================&gt;
+
 </pre><a href="#section-3.3-3" class="pilcrow">¶</a>
 </div>
 <p id="section-3.3-4">The protocol messages below do not include the AKE protocol. Instead, OPAQUE
@@ -1741,13 +1741,13 @@ Input:
 - pwdU, an opaque byte string containing the user's password
 
 Output:
-- request, an CredentialRequest structure
-- r, an OPRF Scalar value
+- request, a CredentialRequest structure
+- blind, an OPRF scalar value
 
 Steps:
-1. (r, M) = Blind(pwdU)
+1. (blind, M) = Blind(pwdU)
 2. Create CredentialRequest request with M
-3. Output (request, r)
+3. Output (request, blind)
 </pre><a href="#section-3.3.2.1-1" class="pilcrow">¶</a>
 </div>
 </section>
@@ -1763,9 +1763,9 @@ CreateCredentialResponse(request, pkS, kU, envU)
 
 Input:
 - request, a CredentialRequest structure
-- pkS, public key of the server
-- kU, OPRF key associated with idU
-- envU, Envelope associated with idU
+- pkS, the public key of the server
+- kU, the OPRF key associated with idU
+- envU, the Envelope associated with idU
 
 Output:
 - response, a CredentialResponse structure
@@ -1793,11 +1793,12 @@ Parameters:
 
 Input:
 - pwdU, an opaque byte string containing the user's password
-- blind, an OPRF Scalar value
+- blind, an OPRF scalar value
 - response, a CredentialResponse structure
 
 Output:
-- secret_credentials, a SecretCredentials structure
+- skU, the user's private key for the AKE protocol
+- pkS, the public key of the server
 - export_key, an additional key
 
 Steps:
@@ -2242,7 +2243,7 @@ or <code>customIdentifier</code>.<a href="#section-5-6" class="pilcrow">¶</a></
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
 <p id="section-6-1">OPAQUE is defined and proven as the composition of two
-functionalities: An Oblivious PRF (OPRF) and an authenticated key-exchange (AKE) protocol.
+functionalities: an OPRF and an AKE protocol.
 It can be seen as a "compiler" for transforming any AKE
 protocol (with KCI security and forward secrecy - see below)
 into a secure aPAKE protocol. In OPAQUE, the user stores a secret private key at the
@@ -2447,8 +2448,8 @@ twice by the server, the response needs to be the same in both cases (since
 this would be the case for real users).
 For protection against this attack, one would apply the encryption function in
 the construction of envU to all the key material in envU.
-The server S will have two keys MK, MK' for a PRF f
-(this refers to a regular PRF such as HMAC or CMAC).
+The server S will have two keys MK, MK' for a pseudorandom function f.
+f refers to a regular pseudorandom function such as HMAC or CMAC.
 Upon receiving a CredentialRequest for a non-existing
 user idU, S computes kU=f(MK; idU) and kU'=f(MK'; idU) and responds with
 CredentialResponse carrying Z=M^kU and envU, where the latter is computed as follows.

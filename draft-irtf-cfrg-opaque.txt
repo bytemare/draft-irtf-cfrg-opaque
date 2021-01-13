@@ -5,10 +5,10 @@
 Network Working Group                                        H. Krawczyk
 Internet-Draft                                       Algorand Foundation
 Intended status: Informational                                   K. Lewi
-Expires: 15 July 2021                                      Novi Research
+Expires: 17 July 2021                                      Novi Research
                                                                C.A. Wood
                                                               Cloudflare
-                                                         11 January 2021
+                                                         13 January 2021
 
 
                   The OPAQUE Asymmetric PAKE Protocol
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 15 July 2021.
+   This Internet-Draft will expire on 17 July 2021.
 
 Copyright Notice
 
@@ -121,7 +121,7 @@ Table of Contents
    certificate mishandling, termination outside the security perimeter,
    visibility to middle boxes, and more.
 
-   Asymmetric (or augmented) Password Authenticated Key Exchange (aPAKE)
+   Asymmetric (or Augmented) Password Authenticated Key Exchange (aPAKE)
    protocols are designed to provide password authentication and
    mutually authenticated key exchange in a client-server setting
    without relying on PKI (except during user/password registration) and
@@ -144,7 +144,7 @@ Table of Contents
    attacks.  In particular, none of these protocols can use the standard
    technique against pre-computation that combines _secret_ random
    values ("salt") into the one-way password mappings.  Either these
-   protocols do not use salt at all or, if they do, they transmit the
+   protocols do not use a salt at all or, if they do, they transmit the
    salt from server to user in the clear, hence losing the secrecy of
    the salt and its defense against pre-computation.  Furthermore,
    transmitting the salt may require additional protocol messages.
@@ -167,15 +167,15 @@ Table of Contents
    to a single-server implementation).
 
    OPAQUE is defined and proven as the composition of two
-   functionalities: an Oblivious PRF (OPRF) and an authenticated key-
-   exchange (AKE) protocol.  It can be seen as a "compiler" for
-   transforming any suitable AKE protocol into a secure aPAKE protocol.
-   (See Section 6 for requirements of the OPRF and AKE protocols.)  This
-   document specifies OPAQUE instantiations based on a variety of AKE
-   protocols, including HMQV [HMQV], 3DH [SIGNAL] and SIGMA [SIGMA].  In
-   general, the modularity of OPAQUE's design makes it easy to integrate
-   with additional AKE protocols, e.g., IKEv2, and with future ones such
-   as those based on post-quantum techniques.
+   functionalities: an oblivious pseudorandom function (OPRF) and an
+   authenticated key-exchange (AKE) protocol.  It can be seen as a
+   "compiler" for transforming any suitable AKE protocol into a secure
+   aPAKE protocol.  (See Section 6 for requirements of the OPRF and AKE
+   protocols.)  This document specifies OPAQUE instantiations based on a
+   variety of AKE protocols, including HMQV [HMQV], 3DH [SIGNAL] and
+   SIGMA [SIGMA].  In general, the modularity of OPAQUE's design makes
+   it easy to integrate with additional AKE protocols, e.g., IKEv2, and
+   with future ones such as those based on post-quantum techniques.
 
    Currently, the most widely deployed (PKI-free) aPAKE is SRP
    [RFC2945], which is vulnerable to pre-computation attacks, lacks a
@@ -217,16 +217,16 @@ Table of Contents
       integer as described in [RFC8017].  Note that these functions
       operate on byte strings in big-endian byte order.
 
-   *  concat(x0, ..., xN): Concatenation of byte strings. "concat(0x01,
-      0x0203, 0x040506) = 0x010203040506".
+   *  concat(x0, ..., xN): Concatenate byte strings.  For example,
+      "concat(0x01, 0x0203, 0x040506) = 0x010203040506".
 
    *  random(n): Generate a random byte string of length "n" bytes.
 
-   *  "xor(a,b)": XOR of byte strings; "xor(0xF0F0, 0x1234) = 0xE2C4".
-      It is an error to call this function with two arguments of unequal
-      length.
+   *  xor(a,b): Apply XOR to byte strings.  For example, "xor(0xF0F0,
+      0x1234) = 0xE2C4".  It is an error to call this function with two
+      arguments of unequal length.
 
-   *  "ct_equal(a, b)": Return "true" if "a" is equal to "b", and false
+   *  ct_equal(a, b): Return "true" if "a" is equal to "b", and false
       otherwise.  This function is constant-time in the length of "a"
       and "b", which are assumed to be of equal length, irrespective of
       the values "a" or "b".
@@ -247,14 +247,14 @@ Table of Contents
 
    *  Oblivious Pseudorandom Function (OPRF, [I-D.irtf-cfrg-voprf]):
 
-      -  Blind(x): Convert input "x" into an Element of the OPRF group,
-         randomize it by some Scalar "r", producing "M", and output
+      -  Blind(x): Convert input "x" into an element of the OPRF group,
+         randomize it by some scalar "r", producing "M", and output
          ("r", "M").
 
       -  Evaluate(k, M): Evaluate input element "M" using private key
          "k", yielding output element "Z".
 
-      -  Unblind(r, Z): Remove random Scalar "r" from "Z", yielding
+      -  Unblind(r, Z): Remove random scalar "r" from "Z", yielding
          output "N".
 
       -  Finalize(x, N, info): Compute the OPRF output using input "x",
@@ -408,16 +408,16 @@ Table of Contents
 3.2.  Offline registration stage
 
    Registration is executed between a user U (running on a client
-   machine) and a server S.  It is assumed the server can identify the
-   user and the client can authenticate the server during this
-   registration phase.  This is the only part in OPAQUE that requires an
-   authenticated channel, either physical, out-of-band, PKI-based, etc.
-   This section describes the registration flow, message encoding, and
-   helper functions.  Moreover, U has a key pair (skU, pkU) for an AKE
-   protocol which is suitable for use with OPAQUE; See Section 3.3.
-   (skU, pkU) may be randomly generated for the account or provided by
-   the calling client.  Clients MUST NOT use the same key pair (skU,
-   pkU) for two different accounts.
+   machine) and a server S.  It is assumed S can identify U and the
+   client can authenticate S during this registration phase.  This is
+   the only part in OPAQUE that requires an authenticated channel,
+   either physical, out-of-band, PKI-based, etc.  This section describes
+   the registration flow, message encoding, and helper functions.
+   Moreover, U has a key pair (skU, pkU) for an AKE protocol which is
+   suitable for use with OPAQUE; See Section 3.3. (skU, pkU) may be
+   randomly generated for the account or provided by the calling client.
+   Clients MUST NOT use the same key pair (skU, pkU) for two different
+   accounts.
 
    To begin, U chooses password pwdU, and S chooses its own pair of
    private-public keys skS and pkS for use with the AKE.  S can use the
@@ -425,22 +425,22 @@ Table of Contents
    offline, i.e., before the registration phase.  Once complete, the
    registration process proceeds as follows:
 
-         Client (pwdU, creds)                       Server (skS, pkS)
-     -----------------------------------------------------------------
-    request, blind = CreateRegistrationRequest(pwdU)
+     Client (pwdU, creds)                             Server (skS, pkS)
+     ------------------------------------------------------------------
+     request, blind = CreateRegistrationRequest(pwdU)
 
-                                      request
-                                 ----------------->
+                                  request
+                         ------------------------->
 
-               (response, kU) = CreateRegistrationResponse(request, pkS)
+                response, kU = CreateRegistrationResponse(request, pkS)
 
-                                      response
-                                 <-----------------
+                                  response
+                         <-------------------------
 
-    record, export_key = FinalizeRequest(pwdU, creds, blind, response)
+     record, export_key = FinalizeRequest(pwdU, creds, blind, response)
 
-                                      record
-                                 ------------------>
+                                   record
+                         ------------------------->
 
    Both client and server MUST validate the other party's public key
    before use.  See Section 6.5 for more details.
@@ -468,7 +468,7 @@ Table of Contents
        opaque pkU<1..2^16-1>;
    } RegistrationUpload;
 
-   envU  The user's "Envelope" structure
+   envU  The user's "Envelope" structure.
 
    pkU  An encoded public key, corresponding to the private key "skU".
 
@@ -483,12 +483,12 @@ Table of Contents
 
    Output:
    - request, a RegistrationRequest structure
-   - r, an OPRF Scalar value
+   - blind, an OPRF scalar value
 
    Steps:
-   1. (r, M) = Blind(pwdU)
+   1. (blind, M) = Blind(pwdU)
    2. Create RegistrationRequest request with M
-   3. Output (request, r)
+   3. Output (request, blind)
 
 3.2.2.2.  CreateRegistrationResponse
 
@@ -500,13 +500,12 @@ Table of Contents
 
    Output:
    - response, a RegistrationResponse structure
-   - kU, Per-user OPRF key
+   - kU, the per-user OPRF key
 
    Steps:
    1. (kU, _) = KeyGen()
    2. Z = Evaluate(kU, request.data)
-   3. Create RegistrationResponse response with
-        (Z, pkS)
+   3. Create RegistrationResponse response with (Z, pkS)
    4. Output (response, kU)
 
 3.2.2.3.  FinalizeRequest
@@ -521,11 +520,11 @@ Parameters:
 Input:
 - pwdU, an opaque byte string containing the user's password
 - creds, a Credentials structure
-- blind, an OPRF Scalar value
+- blind, an OPRF scalar value
 - response, a RegistrationResponse structure
 
 Output:
-- envU, the user's Envelope structure
+- record, a RegistrationUpload structure
 - export_key, an additional key
 
 Steps:
@@ -578,22 +577,22 @@ Steps:
    This section describes the message flow, encoding, and helper
    functions used in this stage.
 
-          Client (pwdU)                    Server (skS, pkS, kU, envU)
-     -----------------------------------------------------------------
-      request, blind = CreateCredentialRequest(pwdU)
+     Client (pwdU)                          Server (skS, pkS, kU, envU)
+     ------------------------------------------------------------------
+     request, blind = CreateCredentialRequest(pwdU)
 
-                                      request
-                                 ----------------->
+                                  request
+                         ------------------------->
 
-      response = CreateCredentialResponse(request, pkS, kU, envU)
+            response = CreateCredentialResponse(request, pkS, kU, envU)
 
-                                      response
-                                 <-----------------
+                                  response
+                         <-------------------------
 
      skU, pkS, export_key = RecoverCredentials(pwdU, blind, response)
 
-                               (AKE with credentials)
-                                 <================>
+                           (AKE with credentials)
+                         <========================>
 
    The protocol messages below do not include the AKE protocol.
    Instead, OPAQUE assumes the client and server run the AKE using the
@@ -638,13 +637,13 @@ Steps:
    - pwdU, an opaque byte string containing the user's password
 
    Output:
-   - request, an CredentialRequest structure
-   - r, an OPRF Scalar value
+   - request, a CredentialRequest structure
+   - blind, an OPRF scalar value
 
    Steps:
-   1. (r, M) = Blind(pwdU)
+   1. (blind, M) = Blind(pwdU)
    2. Create CredentialRequest request with M
-   3. Output (request, r)
+   3. Output (request, blind)
 
 3.3.2.2.  CreateCredentialResponse
 
@@ -652,9 +651,9 @@ Steps:
 
    Input:
    - request, a CredentialRequest structure
-   - pkS, public key of the server
-   - kU, OPRF key associated with idU
-   - envU, Envelope associated with idU
+   - pkS, the public key of the server
+   - kU, the OPRF key associated with idU
+   - envU, the Envelope associated with idU
 
    Output:
    - response, a CredentialResponse structure
@@ -674,11 +673,12 @@ Parameters:
 
 Input:
 - pwdU, an opaque byte string containing the user's password
-- blind, an OPRF Scalar value
+- blind, an OPRF scalar value
 - response, a CredentialResponse structure
 
 Output:
-- secret_credentials, a SecretCredentials structure
+- skU, the user's private key for the AKE protocol
+- pkS, the public key of the server
 - export_key, an additional key
 
 Steps:
@@ -1074,12 +1074,11 @@ Ke3 = HKDF-Expand-Label(handshake_secret, "client enc", "", key_length)
 6.  Security Considerations
 
    OPAQUE is defined and proven as the composition of two
-   functionalities: An Oblivious PRF (OPRF) and an authenticated key-
-   exchange (AKE) protocol.  It can be seen as a "compiler" for
-   transforming any AKE protocol (with KCI security and forward secrecy
-   - see below) into a secure aPAKE protocol.  In OPAQUE, the user
-   stores a secret private key at the server during password
-   registration and retrieves this key each time it needs to
+   functionalities: an OPRF and an AKE protocol.  It can be seen as a
+   "compiler" for transforming any AKE protocol (with KCI security and
+   forward secrecy - see below) into a secure aPAKE protocol.  In
+   OPAQUE, the user stores a secret private key at the server during
+   password registration and retrieves this key each time it needs to
    authenticate to the server.  The OPRF security properties ensure that
    only the correct password can unlock the private key while at the
    same time avoiding potential offline guessing attacks.  This general
@@ -1262,16 +1261,17 @@ Ke3 = HKDF-Expand-Label(handshake_secret, "client enc", "", key_length)
    this would be the case for real users).  For protection against this
    attack, one would apply the encryption function in the construction
    of envU to all the key material in envU.  The server S will have two
-   keys MK, MK' for a PRF f (this refers to a regular PRF such as HMAC
-   or CMAC).  Upon receiving a CredentialRequest for a non-existing user
-   idU, S computes kU=f(MK; idU) and kU'=f(MK'; idU) and responds with
-   CredentialResponse carrying Z=M^kU and envU, where the latter is
-   computed as follows. rwdU is set to kU' and secret_creds is set to
-   the all-zero string (of the length of a regular envU plaintext).
-   Care needs to be taken to avoid side channel leakage (e.g., timing)
-   from helping differentiate these operations from a regular server
-   response.  The above requires changes to the server-side
-   implementation but not to the protocol itself or the client side.
+   keys MK, MK' for a pseudorandom function f. f refers to a regular
+   pseudorandom function such as HMAC or CMAC.  Upon receiving a
+   CredentialRequest for a non-existing user idU, S computes kU=f(MK;
+   idU) and kU'=f(MK'; idU) and responds with CredentialResponse
+   carrying Z=M^kU and envU, where the latter is computed as follows.
+   rwdU is set to kU' and secret_creds is set to the all-zero string (of
+   the length of a regular envU plaintext).  Care needs to be taken to
+   avoid side channel leakage (e.g., timing) from helping differentiate
+   these operations from a regular server response.  The above requires
+   changes to the server-side implementation but not to the protocol
+   itself or the client side.
 
    There is one form of leakage that the above allows and whose
    prevention would require a change in OPAQUE.  An attacker that
