@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-12T01:15:32.595080+00:00",
+  "timestamp": "2021-01-14T01:30:59.372159+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2052,15 +2052,15 @@
       "id": "MDU6SXNzdWU3NDgxMDk1Mzg=",
       "title": "rename StoreUserRecord to indicating the finalization instead of optional persistence",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/89",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "stef",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Just as we dropped the ProtocolMessages part, for the protocol it might be not necessary to call the function StoreUserRecord. For instance my implementation does not care about any kind of persistence or transport of the outcome of the protocol. It might be that the use-case does not need the storage of the user record, for example by just keeping it in memory, or the record might be further processed before storage. Thus i propose to rename the function to `FinalizeUserRecord` instead.",
       "createdAt": "2020-11-21T21:50:54Z",
-      "updatedAt": "2020-12-10T10:54:11Z",
-      "closedAt": null,
+      "updatedAt": "2021-01-13T22:39:41Z",
+      "closedAt": "2021-01-13T22:39:41Z",
       "comments": [
         {
           "author": "chris-wood",
@@ -6738,7 +6738,7 @@
       "labels": [],
       "body": "",
       "createdAt": "2021-01-09T04:29:53Z",
-      "updatedAt": "2021-01-11T15:06:53Z",
+      "updatedAt": "2021-01-13T02:34:03Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "dca52275f12704ef4b90aa8bbd48331007ffb9c5",
@@ -6826,6 +6826,151 @@
               "body": "```suggestion\r\nAn attacker that attempts authentication with the same CredentialRequest twice and receives\r\n```",
               "createdAt": "2021-01-11T15:05:13Z",
               "updatedAt": "2021-01-11T15:05:18Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 113,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTUzOTk2MDgz",
+      "title": "Make process diagrams match function definitions. ",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/113",
+      "state": "MERGED",
+      "author": "creemama",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "There were some inconsistencies in the process diagrams and function definitions.\r\n\r\n-----\r\n\r\nFor example, before this change, the output of CreateCredentialRequest in the process diagram\r\n```\r\nrequest, blind = CreateCredentialRequest(pwdU)\r\n```\r\ndid not match the output of CreateCredentialRequest's function definition:\r\n```\r\nOutput:\r\n- request, an CredentialRequest structure\r\n- r, an OPRF Scalar value\r\n```\r\n`r` should be `blind`, which FinalizeRequest takes as input.\r\n\r\n-----\r\n\r\nIn another example, the output of FinalizeRequest in the process diagram\r\n```\r\nrecord, export_key = FinalizeRequest(pwdU, creds, blind, response)\r\n```\r\ndid not match the output of FinalizeRequest's function definition:\r\n```\r\nOutput:\r\n- envU, the user's Envelope structure\r\n- export_key, an additional key\r\n```",
+      "createdAt": "2021-01-13T07:55:47Z",
+      "updatedAt": "2021-01-13T14:30:11Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "268ec3d685b1d57091ba40eb3bdfce1507e09cfc",
+      "headRepository": "creemama/draft-irtf-cfrg-opaque",
+      "headRefName": "consistency",
+      "headRefOid": "4c97670a8968ba26a75ebed49841b09fd9c6b7cf",
+      "closedAt": "2021-01-13T14:12:27Z",
+      "mergedAt": "2021-01-13T14:12:27Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "5956b66d1b851ef76b79219d7463851e2c74b1c4"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY3MjU4MDgx",
+          "commit": {
+            "abbreviatedOid": "4c97670"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-01-13T14:12:22Z",
+          "updatedAt": "2021-01-13T14:12:22Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 114,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTU0MzI2NDU4",
+      "title": "Adding serialization format for credential file",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/114",
+      "state": "MERGED",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Defines the serialization for the \"credential file\" (the object that is stored server-side and acts as the user's password file).\r\n\r\nCloses #89.",
+      "createdAt": "2021-01-13T16:54:31Z",
+      "updatedAt": "2021-01-13T23:28:01Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "5956b66d1b851ef76b79219d7463851e2c74b1c4",
+      "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
+      "headRefName": "credential_file",
+      "headRefOid": "87a13127aa3cf0e0ea1d23a9640f06eb18d925fb",
+      "closedAt": "2021-01-13T22:39:41Z",
+      "mergedAt": "2021-01-13T22:39:41Z",
+      "mergedBy": "kevinlewi",
+      "mergeCommit": {
+        "oid": "7fc5de0c5625665e18e017bb9eddd35090a19f31"
+      },
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think we should leave it up to a wrapper implementation to add a version around the bytes of the `CredentialFile`, no?",
+          "createdAt": "2021-01-13T20:56:38Z",
+          "updatedAt": "2021-01-13T20:56:38Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Comments addressed -- ready to merge",
+          "createdAt": "2021-01-13T22:22:43Z",
+          "updatedAt": "2021-01-13T22:22:43Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "I'm not sure I have a specific question here, but may I share my thoughts on the subject?\r\n\r\nI have been playing with different ideas on my side, and found that due to the different variable parameters at play it is a quite complex subject to optimize.\r\n\r\n- **Envelope Mode**\r\nIf the envelope is serialized and opaque, the server still needs a way to know the EnvelopeMode to communicate the correct \"Credentials\" structure to the client.\r\n\r\n- **OPRF key**\r\nAs @chris-wood pointed out, the encoding of an OPRF key is tied to the suite and is not encoded into the key itself. Hence, the most straightforward thing to do is to have another field specifying the suite the key belongs to. It's a single byte, and can't hurt that much, I believe.\r\nIf one wants to separate kU from the envelope and store it elsewhere, keys belonging to the same group could be stored in the same table. Thus, the user record only references the kU in another table and doesn't care about the suite.\r\n\r\n- **AKE keys**\r\nGiven a complex environment with different conditions that open the possibility that different AKEs are used, the user record might need to keep track of that as well. Either a reference to the key pair and their type (group and AKE) or stored in a \"table\" dedicated to that key pair.\r\n\r\n- **MHF Params**\r\nThe key derivation functions have different impacts on different platforms and may impact the user experience if the login takes too long due to unsuited parameters. From what I understand, this hasn't been thoroughly discussed, yet (and rightfully so). But if different configurations were to be used for different clients, they have to be saved with the user record.\r\n\r\n\r\nA \"naive\" version of my implementation sees the complete information tied to a user record grow quite rapidly:\r\n```\r\nUserRecord {\r\n    HumanUserID  // Human-memorizable, modifiable user identifier\r\n    UUID               // Unique long-term user identifier, or idu\r\n    UserPublicKey\r\n    EnvelopeMode \r\n    Envelope     \r\n    ServerID     \r\n    OprfSecret   \r\n    ServerAkeID  \r\n    Parameters {\r\n        Ciphersuite\r\n        Hash\r\n        AKE\r\n        MHFParams {\r\n            AlgoID\r\n            time, memory, threads\r\n            KeyLength\r\n        }\r\n    }\r\n}\r\n\r\nServerAke {\r\n    ID             // unique ID for this key pair\r\n    Ake          // the AKE protocol they are used in\r\n    Group    \r\n    Hash     \r\n    SecretKey\r\n    PublicKey\r\n}\r\n```",
+          "createdAt": "2021-01-13T23:28:01Z",
+          "updatedAt": "2021-01-13T23:28:01Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY3NTA5OTgw",
+          "commit": {
+            "abbreviatedOid": "4008fe1"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Since `CredentialFile` is meant to be opaque storage handled by OPAQUE, I think everything in the envelope ought to be serialized. Since the serialized format of a `Scalar` depends on the OPRF group, this does assume that the OPAQUE configuration (and OPRF suite) is known. What prevents a `CredentialFile` from one configuration being used in another configuration? ",
+          "createdAt": "2021-01-13T18:34:04Z",
+          "updatedAt": "2021-01-13T18:39:29Z",
+          "comments": [
+            {
+              "originalPosition": 42,
+              "body": "```suggestion\r\n    SerializedScalar kU;\r\n```",
+              "createdAt": "2021-01-13T18:34:04Z",
+              "updatedAt": "2021-01-13T22:22:19Z"
+            },
+            {
+              "originalPosition": 42,
+              "body": "I assume we want this to be serialized for storage, right?",
+              "createdAt": "2021-01-13T18:34:28Z",
+              "updatedAt": "2021-01-13T22:22:19Z"
+            },
+            {
+              "originalPosition": 79,
+              "body": "Assuming you take the suggestion above, I'd then deserialize `kU` before use.",
+              "createdAt": "2021-01-13T18:34:50Z",
+              "updatedAt": "2021-01-13T22:22:19Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY3NjIwMjYx",
+          "commit": {
+            "abbreviatedOid": "4008fe1"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-13T20:55:58Z",
+          "updatedAt": "2021-01-13T20:55:59Z",
+          "comments": [
+            {
+              "originalPosition": 42,
+              "body": "I could not find \"SerializedScalar\" in the VOPRF doc. Is there a definition for this somewhere?\r\n\r\nEdit: After discussion, found it :) ",
+              "createdAt": "2021-01-13T20:55:58Z",
+              "updatedAt": "2021-01-13T22:22:19Z"
             }
           ]
         }
