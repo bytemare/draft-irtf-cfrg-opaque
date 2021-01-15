@@ -5,10 +5,10 @@
 Network Working Group                                        H. Krawczyk
 Internet-Draft                                       Algorand Foundation
 Intended status: Informational                                   K. Lewi
-Expires: 18 July 2021                                      Novi Research
+Expires: 19 July 2021                                      Novi Research
                                                                C.A. Wood
                                                               Cloudflare
-                                                         14 January 2021
+                                                         15 January 2021
 
 
                   The OPAQUE Asymmetric PAKE Protocol
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 July 2021.
+   This Internet-Draft will expire on 19 July 2021.
 
 Copyright Notice
 
@@ -77,10 +77,10 @@ Table of Contents
      3.3.  Online authenticated key exchange stage
        3.3.1.  Authenticated key exchange messages
        3.3.2.  Authenticated key exchange functions
-     3.4.  Export Key
-     3.5.  AKE Execution and Party Identities
+     3.4.  Export key
+     3.5.  AKE execution and party identities
    4.  Authenticated Key Exchange Protocol Instantiations
-     4.1.  Key Schedule Utility Functions
+     4.1.  Key schedule utility functions
      4.2.  Instantiation with HMQV and 3DH
        4.2.1.  HMQV and 3DH protocol messages
        4.2.2.  HMQV and 3DH key derivation
@@ -94,7 +94,7 @@ Table of Contents
      6.3.  Configuration choice
      6.4.  Static Diffie-Hellman oracles
      6.5.  Input validation
-     6.6.  User authentication versus Authenticated Key Exchange
+     6.6.  User authentication versus authenticated key exchange
      6.7.  OPRF hardening
      6.8.  User and server identities
      6.9.  User enumeration
@@ -168,7 +168,7 @@ Table of Contents
 
    OPAQUE is defined and proven as the composition of two
    functionalities: an oblivious pseudorandom function (OPRF) and an
-   authenticated key-exchange (AKE) protocol.  It can be seen as a
+   authenticated key exchange (AKE) protocol.  It can be seen as a
    "compiler" for transforming any suitable AKE protocol into a secure
    aPAKE protocol.  (See Section 6 for requirements of the OPRF and AKE
    protocols.)  This document specifies OPAQUE instantiations based on a
@@ -177,13 +177,12 @@ Table of Contents
    it easy to integrate with additional AKE protocols, e.g., IKEv2, and
    with future ones such as those based on post-quantum techniques.
 
-   Currently, the most widely deployed (PKI-free) aPAKE is SRP
-   [RFC2945], which is vulnerable to pre-computation attacks, lacks a
-   proof of security, and is less efficient relative to OPAQUE.
-   Moreover, SRP requires a ring as it mixes addition and multiplication
-   operations, and thus does not work over plain elliptic curves.
-   OPAQUE is therefore a suitable replacement for applications that use
-   SRP.
+   Currently, the most widely deployed PKI-free aPAKE is SRP [RFC2945],
+   which is vulnerable to pre-computation attacks, lacks a proof of
+   security, and is less efficient relative to OPAQUE.  Moreover, SRP
+   requires a ring as it mixes addition and multiplication operations,
+   and thus does not work over plain elliptic curves.  OPAQUE is
+   therefore a suitable replacement for applications that use SRP.
 
    This draft complies with the requirements for PAKE protocols set
    forth in [RFC8125].
@@ -205,6 +204,8 @@ Table of Contents
       authenticate.
 
    *  Server (S): Entity which authenticates clients using passwords.
+
+   *  pwdU: An opaque byte string containing the user's password.
 
    *  (skX, pkX): An AKE key pair used in role X; skX is the private key
       and pkX is the public key.  For example, (skU, pkU) refers to U's
@@ -251,6 +252,11 @@ Table of Contents
          randomize it by some scalar "r", producing "M", and output
          ("r", "M").
 
+      -  KeyGen(): Generate an OPRF private and public key.  OPAQUE only
+         requires an OPRF private key.  We write "(kU, _) = KeyGen()" to
+         denote use of this function for generating secret key "kU" (and
+         discarding the corresponding public key).
+
       -  Evaluate(k, M): Evaluate input element "M" using private key
          "k", yielding output element "Z".
 
@@ -289,11 +295,7 @@ Table of Contents
 
    Note that we only need the base mode variant (as opposed to the
    verifiable mode variant) of the OPRF described in
-   [I-D.irtf-cfrg-voprf].  We also assume the existence of a function
-   "KeyGen" from [I-D.irtf-cfrg-voprf], which generates an OPRF private
-   and public key.  OPAQUE only requires an OPRF private key.  We write
-   "(kU, _) = KeyGen()" to denote use of this function for generating
-   secret key "kU" (and discarding the corresponding public key).
+   [I-D.irtf-cfrg-voprf].
 
 3.  Core Protocol
 
@@ -302,12 +304,12 @@ Table of Contents
    the server and stores its encrypted credentials on the server.  In
    the second stage, a client obtains those credentials, unlocks them
    using the user's password and subsequently uses them as input to an
-   authenticated key exchange (AKE) protocol.
+   AKE protocol.
 
    Both registration and authenticated key exchange stages require
    running an OPRF protocol.  The latter stage additionally requires
-   running a mutually-authenticated key-exchange protocol (AKE) using
-   credentials recovered after the OPRF protocol completes.  (The key-
+   running a mutually authenticated key exchange protocol using
+   credentials recovered after the OPRF protocol completes.  (The key
    exchange protocol MUST satisfy forward secrecy and the KCI
    requirement discussed in Section 6.)
 
@@ -570,7 +572,7 @@ Steps:
    Upon completion of this function, the client MUST send "record" to
    the server.
 
-3.2.2.4.  Credential File
+3.2.2.4.  CredentialFile
 
    The server then constructs and stores the "CredentialFile" object,
    where "envU" and "pkU" are obtained from "record", and "kU" is
@@ -722,7 +724,7 @@ Steps:
    [[RFC editor: please change "OPAQUE01" to the correct RFC identifier
    before publication.]]
 
-3.4.  Export Key
+3.4.  Export key
 
    OPAQUE outputs an export_key that may be used for additional
    application-specific purposes.  For example, one might expand the use
@@ -733,7 +735,7 @@ Steps:
    the envelope is validated.  See Section 6.2 for more details about
    this requirement.
 
-3.5.  AKE Execution and Party Identities
+3.5.  AKE execution and party identities
 
    The AKE protocol is run as part of the online authenticated key
    exchange flow described above.  The AKE MUST authenticate the OPAQUE
@@ -741,11 +743,11 @@ Steps:
    messages exchanged during the OPRF computation and credential fetch
    flow.
 
-   Also, authenticated key-exchange protocols generate keys that need to
-   be uniquely and verifiably bound to a pair of identities.  In the
-   case of OPAQUE, those identities correspond to idU and idS.  Thus, it
-   is essential for the parties to agree on such identities, including
-   an agreed bit representation of these identities as needed.
+   Also, AKE protocols generate keys that need to be uniquely and
+   verifiably bound to a pair of identities.  In the case of OPAQUE,
+   those identities correspond to idU and idS.  Thus, it is essential
+   for the parties to agree on such identities, including an agreed bit
+   representation of these identities as needed.
 
    Applications may have different policies about how and when
    identities are determined.  A natural approach is to tie idU to the
@@ -812,7 +814,7 @@ Steps:
    breaking the OPRF does not retroactively affect the security of data
    transferred over a quantum-safe secure channel.
 
-4.1.  Key Schedule Utility Functions
+4.1.  Key schedule utility functions
 
    The key derivation procedures for HMQV, 3DH, and SIGMA-I
    instantiations all make use of the functions below, re-purposed from
@@ -845,7 +847,7 @@ Steps:
    patent, hence we also present OPAQUE with 3DH which only differs in
    the key derivation function at the cost of two additional
    exponentiations (and less resilience to the compromise of ephemeral
-   exponents).  We note that 3DH serves as a basis for the key-exchange
+   exponents).  We note that 3DH serves as a basis for the key exchange
    protocol of [SIGNAL].  Importantly, many other protocols follow a
    similar format with differences mainly in the key derivation
    function.  This includes the Noise family of protocols.  Extensions
@@ -1136,7 +1138,7 @@ Ke3 = HKDF-Expand-Label(handshake_secret, "client enc", "", key_length)
    aPAKE model that ensures security against pre-computation attacks and
    is formulated in the Universal Composability (UC) framework
    [Canetti01] under the random oracle model.  This assumes security of
-   the OPRF function and of the underlying key-exchange protocol.  In
+   the OPRF function and of the underlying key exchange protocol.  In
    turn, the security of the OPRF protocol from [I-D.irtf-cfrg-voprf] is
    proven in the random oracle model under the One-More Diffie-Hellman
    assumption [JKKX16].
@@ -1230,7 +1232,7 @@ Ke3 = HKDF-Expand-Label(handshake_secret, "client enc", "", key_length)
    particular, where applicable, endpoints MUST check whether the
    Diffie-Hellman shared secret is the all-zero value and abort if so.
 
-6.6.  User authentication versus Authenticated Key Exchange
+6.6.  User authentication versus authenticated key exchange
 
    OPAQUE provides PAKE (password-based authenticated key exchange)
    functionality in the client-server setting.  While in the case of
