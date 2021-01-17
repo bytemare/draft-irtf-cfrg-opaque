@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-14T01:30:59.372159+00:00",
+  "timestamp": "2021-01-17T01:29:23.558451+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2059,7 +2059,7 @@
       "labels": [],
       "body": "Just as we dropped the ProtocolMessages part, for the protocol it might be not necessary to call the function StoreUserRecord. For instance my implementation does not care about any kind of persistence or transport of the outcome of the protocol. It might be that the use-case does not need the storage of the user record, for example by just keeping it in memory, or the record might be further processed before storage. Thus i propose to rename the function to `FinalizeUserRecord` instead.",
       "createdAt": "2020-11-21T21:50:54Z",
-      "updatedAt": "2021-01-13T22:39:41Z",
+      "updatedAt": "2021-01-14T01:57:47Z",
       "closedAt": "2021-01-13T22:39:41Z",
       "comments": [
         {
@@ -2145,6 +2145,13 @@
           "body": "Hi @stef, thanks for the comments on this, I think you bring up good points.\r\n\r\nI agree that we should stick to only specifying the cryptographic protocol. But, to clarify, aren't we already specifying message / wire formats (e.g. the bytes that consist of a RegistrationRequest) in this RFC? I see this as still being part of the cryptographic protocol. The reason being that we want a wrapper protocol to be able to not have to worry about the internals of the OPAQUE implementation, and if we did not specify the message / wire formats, then it must mean that the wrapper protocol would have to be exposed to the specifics behind kU, rwdU, etc. (which in my opinion is undesirable).\r\n\r\nA similar argument I think can be made for why we may want to specify storage formats for the password file. If we do not, then doesn't this mean that the OPAQUE protocol must expose to the wrapper protocol the individual components that make up the password file (pkU, envU, kU), and we would leave it up to the wrapper protocol to decide what to do with these objects? In my opinion, it would feel cleaner to have the OPAQUE protocol dictate how these objects would be serialized together, so that the wrapper protocol need not have to interpret what each of pkU, envU, and kU mean.\r\n\r\n> i am also worried about \"variable length\" records, that means complexity, i believe the implementation should know exactly how big a record or any protocol message is, without encoding it in the message. implementing parsing of these things means added complexity, and added complexity means attack surface.\r\n\r\nI agree with this -- I think one way in which we might hope to simplify things would be to consider the suggestions I made in #99 regarding the simplification of the envelope construction. However, this would still mean that we have a \"custom identifier\" mode, which does not solve the problem of the variable-length `idU` and `idS`. Perhaps we can draft a separate issue to talk specifically about whether or not would be a good idea to enforce fixed-width strings for `idU` and `idS`.",
           "createdAt": "2020-12-10T10:54:11Z",
           "updatedAt": "2020-12-10T10:54:11Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "xposting this here what i commented on the merged change:\r\n\r\n> i'm not sure this is a good idea, different use-cases might not need all the bells and whistles. i think i asked in an issue if this is about the standardization of the protocol or it goes beyond that and standardizes also serialization of all kind of wire and storage elements. in implementations using only one instantiation of the protocol the parameters are fixed, and don't need to be stored. if an implementation does not follow the spec and does not store this redundant info in that case, will it still be standards compliant? also some implementations might want to go beyond the currently specified two envelope setups and may want to make all credential extensions configurable, i can see reasons for all configurations. i think there should be a limit of what is part of the standard, and what is free for implementations to decide themselves, and again depending on different configurations of how credential extensions are created this can lead to very different storage formats. my take is to not specify neither the storage format of the record, nor actually the configuration of the envelope. test vectors can still be provided for the protocol, especially if serialization is not fixed, in that case the test vectors can be provided as results of the various steps of the protocol, there is no combinatoric explosion.",
+          "createdAt": "2021-01-14T01:57:46Z",
+          "updatedAt": "2021-01-14T01:57:46Z"
         }
       ]
     },
@@ -2681,9 +2688,45 @@
       "labels": [],
       "body": "I read through the draft (https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html on 1/11/21), and have a few comments.\r\n\r\n-\tAdd `pwdU` to section 1.2\r\n-\tAdd OPRF `KeyGen()` to section 2 (referenced in section 3.2.2.2)\r\n-\tThe type of `mode` in the `InnerEnvelope` struct should be `EnvelopeMode`\r\n-\tSection 3.1: The text above the definition of the `Envelope` and `InnerEnvelope` structs says, \u201cThese credentials are embedded into the following structure\u2026\u201d. I therefore expected to see a `SecretCredentials` struct and `CleartextCredentials` struct in either `Envelope` or `InnerEnvelope`. There is a field for \u201cencrypted_creds\u201d, which could correspond to the encryption of the `SecretCredentials`, but there still seems to be no place where `CleartextCredentials` can be embedded into these structs.\r\n-\tBe consistent about the use of parens for functions which output multiple values (see protocol diagrams at top of section 3.2 and at the top of 3.3)\r\n-\tNotation for kU: section 1.2 says \u201ckU refers to U's private OPRF key\u201d. Without any other context, I expect this to be something generated by the user, and known only to the user. But in reality, kU is a per-user key generated by the server, and not revealed to the client. Is there a different way to describe `kU` to avoid this potential confusion?\r\n-\tOPRF blind is referred to as both `blind` and `r`. Make this consistent for clarity.\r\n-\tNeed to define the `Credentials` structure mentioned at the end of section 3.1: fields of this struct are referenced in section 3.2.2.3, but never defined.\r\n-\tSection 3.2.2.3 step 7: uses `len(pt)`, but I\u2019m not sure what `pt` is supposed to be/refer to. Perhaps `secret_creds`?\r\n-\tSection 3.2.2.3 step 11: \u201cCreate InnerEnvelope contents\u201d. I read this as \u201cCreate [an unnamed] InnerEnvelope body\u2026.\u201d, but you apparently intended to name the struct `contents`, since you then refer to it in step 12. If you gave this a non-English-word name, this would be clearer, since there are no typesetting clues.\r\n-\tIs it really necessary to define a variant of `CleartextCredentials`? Why not always use the larger struct? This is only included as AAD; it is not actually transmitted or stored. It\u2019s adding a lot of extra complexity with no apparent benefit. Implementations can always used a short fixed value if they would otherwise want to use the truncated `CleartextCredentials`.\r\n-\tThe type of OPRF group elements isn\u2019t consistent: in section 3.2.1, it\u2019s an (undefined!) type `SerializedElement data`; in section 3.3.1, it\u2019s `opaque data<1..2^16-1>`\r\n-\tSection 3.3.2.3: The \u201cOutputs\u201d list a `SecretCredentials` and an export key, but the diagram shows that RecoverCredentials outputs (skU, pkS, export_key)\r\n-\tSuggestion: incorporate generic AKE messages into the protocol in section 3.3. It would be nice to have a complete diagram of the generic protocol. Currently, you have a partial diagram in section 3.3 and a textual description of the full protocol in the intro of section 4.\r\n-\tSection 4 intro: \u201cHowever, an instantiation where both AKE and data encryption are quantum safe\u2026\u201d Is this encryption referring to the EnvU encryption defined in section 3.2.2.3? If so, isn\u2019t the encryption already quantum safe? If that\u2019s the case, I\u2019d change this to \u201cHowever, an instantiation where AKE is quantum safe\u2026\u201d to avoid confusion.\r\n-\tSection 4.1: struct `HkdfLabel` contains the field opaque label<8..255> = \"OPAQUE \" + Label; Is `Label` required to be non-null, or is the string required to be null-terminated? The string \u201cOPAQUE \u201c has length 7, so I\u2019m wondering why the minimum field size is 8. (I see that this is consistent with TLS1.3, but I don\u2019t see an explanation there either.)\r\n-\tSection 4.2.1: This section defines, e.g., ` KE1 = credential_request, nonceU, info1*, epkU`, so that KE1 contains the credential_request. However, at the top of section 4, the high-level protocol shows credential_request being sent in addition to KE1. This is another reason it would be helpful to have a complete diagram of the generic protocol (with, e.g., a generic 3-message AKE). For this particular issue, I think KE1 should only include AKE message components; it should not include the credential_request. Similarly for KE2 and section 4.3.1.\r\n-\tSection 5: \u201cFuture specifications \u2026 MAY introduce other AKE instantiations.\u201d Also allow for/mention the possibility of defining alternate OPRFs. For example, https://eprint.iacr.org/2020/1532 gives a lattice-based (and hence PQ) OPRF.\r\n-\tSection 6.6: What does \u201cskipping the key exchange part\u201d mean? Does it mean somehow truncating the protocol/skipping the AKE entirely? Or does it mean not using the exchanged key after a successful authentication? In general, I\u2019m not sure what I would have to do to violate this section, which means I could easily violate it without knowing.\r\n",
       "createdAt": "2021-01-11T22:58:23Z",
-      "updatedAt": "2021-01-11T22:58:23Z",
+      "updatedAt": "2021-01-15T23:23:14Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks, @crockeea, for the detailed review! I reviewed the comments and turned those applicable into action items below. (Some are already addressed, so I omitted those.) I responded to specific comments below that list. Please let me know if I misunderstood any of your feedback.\r\n\r\nTasks:\r\n- [x] Add pwdU to section 1.2 (notation)\r\n- [ ] The type of mode in the InnerEnvelope struct should be EnvelopeMode\r\n- [ ] Section 3.1: Clarify that not all credentials are embedded in the envelope\r\n- [ ] Be consistent about the use of parens for functions which output multiple values (see protocol diagrams at top of section 3.2 and at the top of 3.3)\r\n- [ ] Clarify kU ownership\r\n- [ ] Section 3.2.2.3 step 7: s/len(pt)/len(secret_creds)\r\n- [ ] Section 3.2.2.3 step 11: Rename InnerEnvelope from \"contents\" to something less confusing, perhaps \"inner_envelope\"?\r\n- [ ] Update Section 4 OPRF+AKE text description with a diagram like that in the registration and authentication steps.\r\n- [ ] Clarify HkdfLabel \"Label\" properties (Is Label required to be non-null, or is the string required to be null-terminated?)\r\n- [ ] Section 5: Allow future OPRFs to be chosen, possibly citing PQ OPRFs (https://eprint.iacr.org/2020/1532).\r\n\r\nComments:\r\n\r\n> Add OPRF KeyGen() to section 2 (referenced in section 3.2.2.2)\r\n\r\nThis is already in Section 2, where we say, \"We also assume the existence of a function KeyGen from [I-D.irtf-cfrg-voprf], which generates an OPRF private and public key.\"\r\n\r\n> Section 3.1: The text above the definition of the Envelope and InnerEnvelope structs says, \u201cThese credentials are embedded into the following structure\u2026\u201d. I therefore expected to see a SecretCredentials struct and CleartextCredentials struct in either Envelope or InnerEnvelope. There is a field for \u201cencrypted_creds\u201d, which could correspond to the encryption of the SecretCredentials, but there still seems to be no place where CleartextCredentials can be embedded into these structs.\r\n\r\nGood point! Only the secret credentials are actually included in the envelope. The cleartext credentials are omitted but ultimately folded into the MAC check. We can clarify the text to make this more clear.\r\n\r\n> Notation for kU: section 1.2 says \u201ckU refers to U's private OPRF key\u201d. Without any other context, I expect this to be something generated by the user, and known only to the user. But in reality, kU is a per-user key generated by the server, and not revealed to the client. Is there a different way to describe kU to avoid this potential confusion?\r\n\r\nGreat point. We can probably say something along the lines of, \"kU is a unique OPRF key for user U known only to the server.\"\r\n\r\n> Need to define the Credentials structure mentioned at the end of section 3.1: fields of this struct are referenced in section 3.2.2.3, but never defined.\r\n\r\nCredentials is meant to be an implementation-specific construct with fields listed in its description. We chose to not define this structure using standard notation since it's irrelevant for the description protocol. All that matters is that the core protocol can access the name fields from a Credentials object. (We do [something similar for HPKE] when generating encryption contexts.)\r\n\r\n> Is it really necessary to define a variant of CleartextCredentials? Why not always use the larger struct? This is only included as AAD; it is not actually transmitted or stored. It\u2019s adding a lot of extra complexity with no apparent benefit. Implementations can always used a short fixed value if they would otherwise want to use the truncated CleartextCredentials.\r\n\r\nHmm, I'm not sure I understand this comment. @crockeea, would you mind elaborating?\r\n\r\n> Suggestion: incorporate generic AKE messages into the protocol in section 3.3. It would be nice to have a complete diagram of the generic protocol. Currently, you have a partial diagram in section 3.3 and a textual description of the full protocol in the intro of section 4.\r\n\r\nI think it's more readable if the core protocol description is unencumbered by the AKE steps. How about a compromise: replace the textual description in Section 4 with a graphical description similar to that in Section 3?\r\n\r\n> Section 4 intro: \u201cHowever, an instantiation where both AKE and data encryption are quantum safe\u2026\u201d Is this encryption referring to the EnvU encryption defined in section 3.2.2.3? If so, isn\u2019t the encryption already quantum safe? If that\u2019s the case, I\u2019d change this to \u201cHowever, an instantiation where AKE is quantum safe\u2026\u201d to avoid confusion.\r\n\r\nI think this is referring to the encryption of data sent during and after the AKE, though I'm now not certain :) @hugokraw, can you double check this paragraph?\r\n\r\n> Section 4.1: struct HkdfLabel contains the field opaque label<8..255> = \"OPAQUE \" + Label; Is Label required to be non-null, or is the string required to be null-terminated? The string \u201cOPAQUE \u201c has length 7, so I\u2019m wondering why the minimum field size is 8. (I see that this is consistent with TLS1.3, but I don\u2019t see an explanation there either.)\r\n\r\nHmm, good question. I don't recall off hand. I filed [this issue](https://github.com/tlswg/tls13-spec/issues/1207) against the TLS 1.3 update to track this question.\r\n\r\n> Section 4.2.1: This section defines, e.g., KE1 = credential_request, nonceU, info1*, epkU, so that KE1 contains the credential_request. However, at the top of section 4, the high-level protocol shows credential_request being sent in addition to KE1. This is another reason it would be helpful to have a complete diagram of the generic protocol (with, e.g., a generic 3-message AKE). For this particular issue, I think KE1 should only include AKE message components; it should not include the credential_request. Similarly for KE2 and section 4.3.1.\r\n\r\nThis is an interesting point. Mixing them together was done to highlight that the OPAQUE messages MUST be included in the AKE transcript. I'll see if we can show this requirement differently without losing readability.\r\n\r\n> Section 6.6: What does \u201cskipping the key exchange part\u201d mean? Does it mean somehow truncating the protocol/skipping the AKE entirely? Or does it mean not using the exchanged key after a successful authentication? In general, I\u2019m not sure what I would have to do to violate this section, which means I could easily violate it without knowing.\r\n\r\nIt means, for example, just running the OPRF flow and then doing nothing with the recovered credentials. Do you think it would be useful or valuable to be more specific here?",
+          "createdAt": "2021-01-14T22:40:14Z",
+          "updatedAt": "2021-01-15T01:53:02Z"
+        },
+        {
+          "author": "crockeea",
+          "authorAssociation": "NONE",
+          "body": "- For the OPRF `KeyGen`, my confusion stemmed from looking in the OPRF API list and not finding `KeyGen` there. I propose adding the following to the OPRF API list:\r\n   ```\r\n   KeyGen(): Generates an OPRF private and public key. OPAQUE only requires an OPRF private key. We write (kU, _) = KeyGen() to denote use of this function for generating secret key kU (and discarding the corresponding public key).\r\n   ```\r\n   and removing the corresponding text from the paragraph below the list.\r\n- For `Credentials`: I'm not very familiar with standard practices here, but should we perhaps point out that this struct is implementation-specific? Otherwise it just looks like it's missing/an error.\r\n- \"variant of CleartextCredentials\": Section 3.1 contains two definitions of the `CleartextCredentials` struct, and `EnvelopeMode` is an enum that indicates which struct type is contained in the envelope (as I write this it strikes me that this is really not right: `CleartextCredentials` are not part of the envelope (at least not the `Envelope` struct)!). Can we get away with using a single `CleartextCredentials` struct? This eliminates the need for the `EnvelopeMode` enum, which results in a simpler and easier-to-understand protocol. I'm not seeing what benefit we get from defining two different `CleartextCredentials` structs with an enum to switch between them.\r\n- On a related note: section 3.1 also defines `SecretCredentials` twice, but there are no differences between the two definitions. If you do end up keeping two structs for `CleartextCredentials` for some reason, then section 3.1 should define `SecretCredentials` only once. and view `EnvelopeMode` as switching between the two definitions of `CleartextCredentials`. (The current approach is to use the `EnvelopeMode` to switch between alternate definitions of both `*Credentials` types.)\r\n- \"Core Protocol diagram\": To me, the \"core\" protocol is the combination of the OPRF and the AKE, and section 3 purports to describe the \"Core Protocol\". However, if you're proposing replacing the textual description with a diagram similar to section 3.3 augmented with the AKE messages, I'd be okay with that. As long as the complete (generic) diagram is somewhere.\r\n- @hugokraw Regarding the paragraph about quantum safety: \"OPAQUE may be instantiated....[h]owever, an instantiation where both AKE and data encryption are quantum safe, but the OPRF is not, would still ensure...\" I read that as \"an instantiation [of OPAQUE]\", and when I think about the security of \"OPAQUE\", I think about the authentication/key exchange protocol itself, _not_ what happens after that (which seems to me to be beyond the scope of this specification). We should be clear which encryption scheme this is referring to.\r\n- \u201cskipping the key exchange part\u201d: Yes, it would be valuable to be more specific here. I see two possible interpretations of the current paragraph. It either addresses a situation where\r\n   - someone executes OPAQUE (by which I mean the OPRF+AKE), gets the key, and then throws the key away\r\n   - someone executes only an OPRF (or perhaps what you currently refer to as the \"core protocol\") without any sort of key exchange\r\n\r\nI think most of my confusion on several of these points arises because the document appears to define the \"core protocol\" as just the OPRF portion. I'm not sure why, since, as you point out, the AKE is _required_ for security. As written, the AKE comes off as a \"second-class citizen\". By including the AKE as part of the \"core protocol\", we make it clear that the AKE is a required part of OPAQUE. There is no longer the possibility of \"skipping the key exchange\", because it would be clear that a protocol that does an OPRF without an AKE is _not_ OPAQUE.\r\n\r\nWe should also more clearly define the scope of the specification. It refers only to the key exchange and authentication, and not to anything outside that (i.e., usage of OPAQUE in a larger protocol). This would, for example, clear up any confusion about which encryption scheme is referred to in the post-quantum security paragraph: it could only refer to the encryption scheme in the OPAQUE protocol itself.",
+          "createdAt": "2021-01-15T00:56:38Z",
+          "updatedAt": "2021-01-15T00:56:38Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Regarding the paragraph about quantum safety: \"OPAQUE may be instantiated....[h]owever, an instantiation where both AKE and data encryption are quantum safe, but the OPRF is not, would still ensure...\" I read that as \"an instantiation [of OPAQUE]\", and when I think about the security of \"OPAQUE\", I think about the authentication/key exchange protocol itself, not what happens after that (which seems to me to be beyond the scope of this specification). We should be clear which encryption scheme this is referring to.\r\n\r\nI suggest moving this text to the security considerations as subsection titled \"Quantum-safe instantiation\" with the following edited text:\r\n\r\nOPAQUE may be instantiated with any post-quantum (PQ) AKE protocol with the security properties (KCI resistance and forward secrecy) outlined in {{security-considerations}}. To obtain a quantum-safe OPAQUE instantiation, also the OPRF needs to be quantum safe. Recent progress towards defining such OPRF can be found in [cite https://eprint.iacr.org/2020/1532]. We do stress that an OPAQUE instantiation where the AKE protocol is quantum-safe but the OPRF is not, would still ensure data security against future quantum attacks since breaking the OPRF does not retroactively affect the security of data transferred over a quantum-safe secure channel.\r\n\r\n@crockeea @chris-wood Is that better? \"quantum-safe secure channel.\" is short for \"data transferred under a  quantum-safe encryption scheme with a key derived from a quantum-safe AKE\". You may want to be more explicit.\r\n",
+          "createdAt": "2021-01-15T23:13:41Z",
+          "updatedAt": "2021-01-15T23:13:41Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Section 6.6: What does \u201cskipping the key exchange part\u201d mean? Does it mean somehow truncating the protocol/skipping the AKE entirely? Or does it mean not using the exchanged key after a successful authentication? In general, I\u2019m not sure what I would have to do to violate this section, which means I could easily violate it without knowing.\r\n\r\nI suggest the following replacement text for that section:\r\n\r\nOPAQUE provides PAKE (password-based authenticated key exchange) functionality in the client-server setting. While for user identification focus is often on the authentication part, we stress that the key exchange element is essential for data protection.  Authenticating the user but not protecting the data in the ensuing session is analogous to carefully checking a visitor's \r\n credential at the door and then leaving the door open for others to enter freely.\r\n\r\n@crockeea @chris-wood Is this better? I am ok with removing this remark all together. I heard this question a couple of times (why we need key exchange) so I wanted to make this point. But if it is confusing we can do without it.",
+          "createdAt": "2021-01-15T23:19:36Z",
+          "updatedAt": "2021-01-15T23:19:36Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "From @crockeea \r\n> I think most of my confusion on several of these points arises because the document appears to define the \"core protocol\" as just the OPRF portion. I'm not sure why, since, as you point out, the AKE is required for security. As written, the AKE comes off as a \"second-class citizen\". By including the AKE as part of the \"core protocol\", we make it clear that the AKE is a required part of OPAQUE. \r\n\r\n@chris-wood @kevinlewi We must make sure that readers understand that there is no OPAQUE without AKE. So @crockeea suggestions in this regard are *very* important.",
+          "createdAt": "2021-01-15T23:23:14Z",
+          "updatedAt": "2021-01-15T23:23:14Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -6885,7 +6928,7 @@
       "labels": [],
       "body": "Defines the serialization for the \"credential file\" (the object that is stored server-side and acts as the user's password file).\r\n\r\nCloses #89.",
       "createdAt": "2021-01-13T16:54:31Z",
-      "updatedAt": "2021-01-13T23:28:01Z",
+      "updatedAt": "2021-01-14T16:08:09Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "5956b66d1b851ef76b79219d7463851e2c74b1c4",
@@ -6919,6 +6962,55 @@
           "body": "I'm not sure I have a specific question here, but may I share my thoughts on the subject?\r\n\r\nI have been playing with different ideas on my side, and found that due to the different variable parameters at play it is a quite complex subject to optimize.\r\n\r\n- **Envelope Mode**\r\nIf the envelope is serialized and opaque, the server still needs a way to know the EnvelopeMode to communicate the correct \"Credentials\" structure to the client.\r\n\r\n- **OPRF key**\r\nAs @chris-wood pointed out, the encoding of an OPRF key is tied to the suite and is not encoded into the key itself. Hence, the most straightforward thing to do is to have another field specifying the suite the key belongs to. It's a single byte, and can't hurt that much, I believe.\r\nIf one wants to separate kU from the envelope and store it elsewhere, keys belonging to the same group could be stored in the same table. Thus, the user record only references the kU in another table and doesn't care about the suite.\r\n\r\n- **AKE keys**\r\nGiven a complex environment with different conditions that open the possibility that different AKEs are used, the user record might need to keep track of that as well. Either a reference to the key pair and their type (group and AKE) or stored in a \"table\" dedicated to that key pair.\r\n\r\n- **MHF Params**\r\nThe key derivation functions have different impacts on different platforms and may impact the user experience if the login takes too long due to unsuited parameters. From what I understand, this hasn't been thoroughly discussed, yet (and rightfully so). But if different configurations were to be used for different clients, they have to be saved with the user record.\r\n\r\n\r\nA \"naive\" version of my implementation sees the complete information tied to a user record grow quite rapidly:\r\n```\r\nUserRecord {\r\n    HumanUserID  // Human-memorizable, modifiable user identifier\r\n    UUID               // Unique long-term user identifier, or idu\r\n    UserPublicKey\r\n    EnvelopeMode \r\n    Envelope     \r\n    ServerID     \r\n    OprfSecret   \r\n    ServerAkeID  \r\n    Parameters {\r\n        Ciphersuite\r\n        Hash\r\n        AKE\r\n        MHFParams {\r\n            AlgoID\r\n            time, memory, threads\r\n            KeyLength\r\n        }\r\n    }\r\n}\r\n\r\nServerAke {\r\n    ID             // unique ID for this key pair\r\n    Ake          // the AKE protocol they are used in\r\n    Group    \r\n    Hash     \r\n    SecretKey\r\n    PublicKey\r\n}\r\n```",
           "createdAt": "2021-01-13T23:28:01Z",
           "updatedAt": "2021-01-13T23:28:01Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "i'm not sure this is a good idea, different use-cases might not need all the bells and whistles. i think i asked in an issue if this is about the standardization of the protocol or it goes beyond that and standardizes also serialization of all kind of wire and storage elements. in implementations using only one instantiation of the protocol the parameters are fixed, and don't need to be stored. if an implementation does not follow the spec and does not store this redundant info in that case, will it still be standards compliant? also some implementations might want to go beyond the currently specified two envelope setups and may want to make all credential extensions configurable, i can see reasons for all configurations. i think there should be a limit of what is part of the standard, and what is free for implementations to decide themselves, and again depending on different configurations of how credential extensions are created this can lead to very different storage formats. my take is to not specify neither the storage format of the record, nor actually the configuration of the envelope. test vectors can still be provided for the protocol, especially if serialization is not fixed, in that case the test vectors can be provided as results of the various steps of the protocol, there is no combinatoric explosion.",
+          "createdAt": "2021-01-14T01:53:47Z",
+          "updatedAt": "2021-01-14T01:53:47Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "to quote Antoine de Saint-Exupery:\r\n> Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away .",
+          "createdAt": "2021-01-14T02:00:28Z",
+          "updatedAt": "2021-01-14T02:00:28Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "imagine an implementation that stores (parts of) the record in a smartcard, a cortex m[034], a cars ECU, or a yubikey. an implementation that has one pkS and one that has separate pkS for each user. it makes sense to have different implementations to be interoperable with each other on the protocol level, a client and a server running different implementations. but the records, do not need to be specified.",
+          "createdAt": "2021-01-14T12:31:58Z",
+          "updatedAt": "2021-01-14T12:31:58Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The standard needs to specify ways to interpret envelopes for the sake of security and interoperability. (What's included in the envelope is critical to the overall security of OPAQUE.) \r\n\r\nThe `mode` parameter was introduced precisely to allow the sort of extensibility you're after. For example, if neither of the envelope formats work for your use case, you may pick a new mode and its corresponding envelope structure. The existing modes were chosen because we believe they represent the minimal information needed for most applications.\r\n\r\nRegarding the CredentialFile format, this change describes the structure and format of what minimally needs to be *associated* with a given user's record. It does not mandate how server implementations store this information. ",
+          "createdAt": "2021-01-14T13:41:38Z",
+          "updatedAt": "2021-01-14T13:41:38Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Hello Stefan,\r\n\r\nmy point wasn't to say \"hey, this is how I think we should do it, let's put everything in there to have a perfect thingy\" :)\r\nAs I said, this is the naive structure for my proof-of-concept, and, believe me, I don't want to keep it like this.\r\n\r\nI'm aligned with you, and I think we all agree. I believe that there is a _sweet spot_ that OPAQUE is reaching, a balance between the core necessities and minimize implementation pitfalls that might introduce vulnerabilities in the usage of OPAQUE.",
+          "createdAt": "2021-01-14T13:47:18Z",
+          "updatedAt": "2021-01-14T13:47:43Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "> The standard needs to specify ways to interpret envelopes for the sake of security and interoperability. (What's included in the envelope is critical to the overall security of OPAQUE.)\r\n\r\nagreed. security and interop are the goals of an opaque standard.\r\n\r\n> The `mode` parameter was introduced precisely to allow the sort of extensibility you're after.\r\n> For example, if neither of the envelope formats work for your use case, you may pick a new mode and its corresponding envelope structure. \r\n\r\noh? i guess i missed the part where it says that this is an optional extensible parameter, and not necessary to be conformant with the spec. i guess i suffer from patch reading fatigue trying to keep up with all the changes, sorry for that.\r\n\r\n> The existing modes were chosen because we believe they represent the minimal information needed for most applications.\r\n\r\nis there any documentation on how this belief was established? for example why not chose the minimal envelope, with 0 credentialextensions as a base mode isn't that the minimal information already needed for most applications?\r\n \r\n> Regarding the CredentialFile format, this change describes the structure and format of what minimally needs to be _associated_ with a given user's record. It does not mandate how server implementations store this information.\r\n\r\nmaybe calling it a file is misguiding then, perhaps it might make sense to change it to something like:\r\nThe following values need to be stored by the server indexed by the idU: kU, envU, pkU.\r\ni do disagree with the part: \r\n\r\n> describes the structure and format\r\n\r\nwhat if i want to store kU in a secure element, or sgx (trying not to laugh hard...) while the rest can be stored outside of it? or alternatively, if there is cleartext elements in the envelope that can be deduped in some way, why store them in the envelope, pkS and idS are some simple candidates to have not stored in the envU, but only reassembled before sending of the CreateCredentialResponse response.",
+          "createdAt": "2021-01-14T14:38:54Z",
+          "updatedAt": "2021-01-14T14:39:43Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> is there any documentation on how this belief was established? for example why not chose the minimal envelope, with 0 credentialextensions as a base mode isn't that the minimal information already needed for most applications?\r\n\r\nThere are no more extensions, so I think this is already addressed :) Please have a look at the latest version of the draft here. (Sorry, many things are changing, and I understand it's hard to follow!)\r\n\r\n> maybe calling it a file is misguiding then, perhaps it might make sense to change it to something like:\r\n\r\nWe have a structure for applications which do not want to store things in some special way, i.e., they want to write the \"file\" as presented directly to storage.\r\n\r\n> what if i want to store kU in a secure element, or sgx (trying not to laugh hard...) while the rest can be stored outside of it? or alternatively, if there is cleartext elements in the envelope that can be deduped in some way, why store them in the envelope, pkS and idS are some simple candidates to have not stored in the envU, but only reassembled before sending of the CreateCredentialResponse response.\r\n\r\nAs above, the file format *does not* preclude implementation- or application-specific storage for these things. I recommend having a look at the latest version of the spec to see how things are described. \r\n\r\nAlternatively, if it would help, I'd be happy to hop on a call to discuss these issues in more depth. :-) ",
+          "createdAt": "2021-01-14T16:08:08Z",
+          "updatedAt": "2021-01-14T16:08:08Z"
         }
       ],
       "reviews": [
@@ -6975,6 +7067,136 @@
           ]
         }
       ]
+    },
+    {
+      "number": 115,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTU0NjMxMTE0",
+      "title": "Make the online-phase process diagram match function definitions.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/115",
+      "state": "MERGED",
+      "author": "creemama",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "87a13127aa3cf0e0ea1d23a9640f06eb18d925fb changed the signature of\r\n`CreateCredentialResponse`.\r\n\r\nI also improved upon @kevinlewi's update.\r\n\r\nI took the definitions of the OPRF functions and types from\r\nhttps://cfrg.github.io/draft-irtf-cfrg-voprf/draft-irtf-cfrg-voprf.html .\r\nI modified them some. Here is the original text for reference:\r\n- SerializedElement and SerializedScalar are serialized representations of\r\n  Element and Scalar types of length Ne and Ns, respectively\r\n- SerializeElement(A): A member function of GG that maps a group element A to\r\n  a unique byte array buf of fixed length Ne.\r\n- DeserializeElement(buf): A member\r\n  function of GG that maps a byte array buf to a group element A, or fails if\r\n  the input is not a valid byte representation of an element.\r\n\r\nI removed the references to `SerializeElement` and `DeserializeElement` since\r\nthey were not referenced anywhere in the draft.\r\n\r\nThere was also no mention of `SerializeScalar`. I added\r\n\"`kU` is serialized using `SerializeScalar`\" to make its usage explicit.\r\n\r\nI changed `CredentialRequest` and `CredentialResponse` to use\r\n`SerializedElement` to match `RegistrationRequest` and `RegistrationResponse`.\r\n\r\nIn `RegistrationUpload` I moved `Envelope` to the end of the struct to be\r\nconsistent with the `Envelope`'s position in other structs:\r\n```\r\nstruct {\r\n    SerializedScalar kU;\r\n    opaque pkU<1..2^16-1>;\r\n    Envelope envU;\r\n} CredentialFile;\r\n\r\nstruct {\r\n    SerializedElement data;\r\n    opaque pkS<1..2^16-1>;\r\n    Envelope envU;\r\n} CredentialResponse;\r\n```\r\nAlso, `Envelope` is of variable length.",
+      "createdAt": "2021-01-14T04:17:43Z",
+      "updatedAt": "2021-01-14T14:07:28Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "7fc5de0c5625665e18e017bb9eddd35090a19f31",
+      "headRepository": "creemama/draft-irtf-cfrg-opaque",
+      "headRefName": "consistency",
+      "headRefOid": "ceadc91bdaa0fc296c748e571a05c2c7014578aa",
+      "closedAt": "2021-01-14T13:48:39Z",
+      "mergedAt": "2021-01-14T13:48:39Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "788a5a3817eddd0052c9576cf27a8f3970530058"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY4MjQ3MjU3",
+          "commit": {
+            "abbreviatedOid": "ceadc91"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-01-14T13:48:35Z",
+          "updatedAt": "2021-01-14T13:48:35Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 116,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTU1MzI1NTA2",
+      "title": "Update headings and hyphenation.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/116",
+      "state": "MERGED",
+      "author": "creemama",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I also tackled two suggestions in https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/112.",
+      "createdAt": "2021-01-15T01:22:48Z",
+      "updatedAt": "2021-01-15T01:57:01Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "788a5a3817eddd0052c9576cf27a8f3970530058",
+      "headRepository": "creemama/draft-irtf-cfrg-opaque",
+      "headRefName": "consistency",
+      "headRefOid": "a0cce2da3aafc5392f422738a84fef8e4781964c",
+      "closedAt": "2021-01-15T01:52:54Z",
+      "mergedAt": "2021-01-15T01:52:54Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "7539e8665bae01e8c96f79b8f378f56dcbb8bab7"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY4NzYyNjUw",
+          "commit": {
+            "abbreviatedOid": "064c1dc"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-15T01:52:28Z",
+          "updatedAt": "2021-01-15T01:52:29Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "```suggestion\r\n(PKI-free) aPAKE protocols, none of these protocols are secure against\r\n```",
+              "createdAt": "2021-01-15T01:52:29Z",
+              "updatedAt": "2021-01-15T01:52:34Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTY4NzYyNzQ1",
+          "commit": {
+            "abbreviatedOid": "064c1dc"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Thank you!",
+          "createdAt": "2021-01-15T01:52:47Z",
+          "updatedAt": "2021-01-15T01:52:47Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 117,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTU1MzQxMzE4",
+      "title": "Surround multiple output params with parentheses in process diagrams.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/117",
+      "state": "OPEN",
+      "author": "creemama",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "In the steps for functions, we surround multiple output params with\r\nparentheses:\r\n```\r\nSteps:\r\n1. (blind, M) = Blind(pwdU)\r\n2. Create RegistrationRequest request with M\r\n3. Output (request, blind)\r\n```\r\n\r\n@crockeea pointed out that we should be consistent. From\r\nhttps://github.com/cfrg/draft-irtf-cfrg-opaque/issues/112#issuecomment-760522234,\r\n\"Be consistent about the use of parens for functions which output multiple\r\nvalues (see protocol diagrams at top of section 3.2 and at the top of 3.3)\".",
+      "createdAt": "2021-01-15T02:19:51Z",
+      "updatedAt": "2021-01-15T02:19:51Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "7539e8665bae01e8c96f79b8f378f56dcbb8bab7",
+      "headRepository": "creemama/draft-irtf-cfrg-opaque",
+      "headRefName": "consistency",
+      "headRefOid": "4bcdd6bbe5f0100adcfba25d0308fe2a755513af",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
