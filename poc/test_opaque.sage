@@ -9,14 +9,11 @@ try:
     from sagelib.opaque import default_opaque_configuration, OPAQUECore
     from sagelib.opaque_common import encode_vector, decode_vector, random_bytes, _as_bytes
     from sagelib.opaque_messages import deserialize_registration_request, deserialize_registration_response, deserialize_registration_upload, deserialize_credential_request, deserialize_credential_response
-    from sagelib.opaque import create_registration_request, create_registration_response, finalize_request, \
-        create_credential_request, create_credential_response, recover_credentials
     from sagelib.opaque_messages import InnerEnvelope, deserialize_inner_envelope, envelope_mode_base, envelope_mode_custom_identifier, \
         Envelope, deserialize_envelope
     from sagelib.opaque_messages import Credentials, SecretCredentials, CleartextCredentials, CustomCleartextCredentials
     from sagelib import ristretto255
     from sagelib.opaque_common import I2OSP, OS2IP, encode_vector, encode_vector_len, decode_vector, decode_vector_len
-    from sagelib.opaque_ake import TripleDH
 except ImportError as e:
     sys.exit("Error loading preprocessed sage files. Try running `make setup && make clean pyfiles`. Full error: " + e)
 
@@ -44,8 +41,7 @@ def test_registration_and_authentication():
     assert recovered_pkS == pkS
 
     cred_request, cred_metadata = core.create_credential_request(badPwdU)
-    cred_response = create_credential_response(
-        config, cred_request, pkS, kU, record.envU)
+    cred_response = core.create_credential_response(cred_request, pkS, kU, record.envU)
     try:
         recovered_skU, recovered_pkS, recovered_export_key = core.recover_credentials(badPwdU, cred_metadata, cred_response)
         assert False
