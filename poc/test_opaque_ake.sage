@@ -8,11 +8,9 @@ import hashlib
 try:
     from sagelib.opaque import default_opaque_configuration, OPAQUECore 
     from sagelib.opaque_common import encode_vector, decode_vector, random_bytes, _as_bytes
-    from sagelib.opaque_messages import deserialize_registration_request, deserialize_registration_response, deserialize_registration_upload, deserialize_credential_request, deserialize_credential_response
-    from sagelib.opaque import create_registration_request, create_registration_response, finalize_request, \
-        create_credential_request, create_credential_response, recover_credentials
     from sagelib.opaque_messages import InnerEnvelope, deserialize_inner_envelope, envelope_mode_base, envelope_mode_custom_identifier, \
-        Envelope, deserialize_envelope
+        Envelope, deserialize_envelope, deserialize_registration_request, deserialize_registration_response, deserialize_registration_upload, \
+            deserialize_credential_request, deserialize_credential_response
     from sagelib.opaque_messages import Credentials, SecretCredentials, CleartextCredentials, CustomCleartextCredentials
     from sagelib import ristretto255
     from sagelib.opaque_common import I2OSP, OS2IP, I2OSP_le, OS2IP_le, encode_vector, encode_vector_len, decode_vector, decode_vector_len
@@ -30,134 +28,134 @@ def to_hex(octet_string):
     return ''.join(format(x, '02x') for x in octet_string)
 
 
-class Protocol(object):
-    def __init__(self):
-        self.inputs = [
-            {
-                "idU": _as_bytes("alice"),
-                "idS": _as_bytes("bob"),
-                "pwdU": _as_bytes("CorrectHorseBatteryStaple"),
-                "info1": _as_bytes("hello bob"),
-                "info2": _as_bytes("greetings alice"),
-            }
-        ]
+# class Protocol(object):
+#     def __init__(self):
+#         self.inputs = [
+#             {
+#                 "idU": _as_bytes("alice"),
+#                 "idS": _as_bytes("bob"),
+#                 "pwdU": _as_bytes("CorrectHorseBatteryStaple"),
+#                 "info1": _as_bytes("hello bob"),
+#                 "info2": _as_bytes("greetings alice"),
+#             }
+#         ]
 
-    def run_vector(self, vector):
-        raise Exception("Not implemented")
+#     def run_vector(self, vector):
+#         raise Exception("Not implemented")
 
-    def run(self, config):
-        vectors = []
-        for x in self.inputs:
-            # idU = x["idU"]
-            # idS = x["idS"]
-            pwdU = x["pwdU"]
-            info1 = x["info1"]
-            info2 = x["info1"]
+#     def run(self, config):
+#         vectors = []
+#         for x in self.inputs:
+#             # idU = x["idU"]
+#             # idS = x["idS"]
+#             pwdU = x["pwdU"]
+#             info1 = x["info1"]
+#             info2 = x["info1"]
 
-            # TODO(caw): call this from the configuration?
-            (skU, pkU) = ristretto255.keygen()
-            (skS, pkS) = ristretto255.keygen()
-            skU_bytes = I2OSP_le(skU, 32)
-            pkU_bytes = ristretto255.ENCODE(*pkU)
-            skS_bytes = I2OSP_le(skS, 32)
-            pkS_bytes = ristretto255.ENCODE(*pkS)
+#             # TODO(caw): call this from the configuration?
+#             (skU, pkU) = ristretto255.keygen()
+#             (skS, pkS) = ristretto255.keygen()
+#             skU_bytes = I2OSP_le(skU, 32)
+#             pkU_bytes = ristretto255.ENCODE(*pkU)
+#             skS_bytes = I2OSP_le(skS, 32)
+#             pkS_bytes = ristretto255.ENCODE(*pkS)
 
-            idU = pkU_bytes
-            idS = pkS_bytes
+#             idU = pkU_bytes
+#             idS = pkS_bytes
 
-            creds = Credentials(skU_bytes, pkU_bytes)
+#             creds = Credentials(skU_bytes, pkU_bytes)
 
-            # Run the registration flow to register credentials
-            request, reg_metadata = create_registration_request(config, pwdU)
-            response, kU = create_registration_response(config, request, pkS_bytes)
-            record, export_key, nonce = finalize_request(config, creds, pwdU, reg_metadata, response)
+#             # Run the registration flow to register credentials
+#             request, reg_metadata = create_registration_request(config, pwdU)
+#             response, kU = create_registration_response(config, request, pkS_bytes)
+#             record, export_key, nonce = finalize_request(config, creds, pwdU, reg_metadata, response)
 
-            kex = TripleDH(config)
+#             kex = TripleDH(config)
 
-            # Run the authentication flow to recover credentials
-            cred_request, cred_metadata = create_credential_request(
-                config, pwdU)
-            serialized_cred_request = cred_request.serialize()
-            # deserialized_request = deserialize_credential_request(
-            #     config, serialized_cred_request)
-            # assert cred_request == deserialized_request
+#             # Run the authentication flow to recover credentials
+#             cred_request, cred_metadata = create_credential_request(
+#                 config, pwdU)
+#             serialized_cred_request = cred_request.serialize()
+#             # deserialized_request = deserialize_credential_request(
+#             #     config, serialized_cred_request)
+#             # assert cred_request == deserialized_request
 
-            ke1_state, ke1, ke1_serialized = kex.generate_ke1(serialized_cred_request, info1)
-            (client_nonce, eskU, epkU, hasher) = ke1_state
-            epkU_bytes = ristretto255.ENCODE(*epkU)
+#             ke1_state, ke1, ke1_serialized = kex.generate_ke1(serialized_cred_request, info1)
+#             (client_nonce, eskU, epkU, hasher) = ke1_state
+#             epkU_bytes = ristretto255.ENCODE(*epkU)
 
-            cred_response = create_credential_response(
-                config, cred_request, pkS_bytes, kU, record.envU)
-            serialized_cred_response = cred_response.serialize()
-            # deserialized_response = deserialize_credential_response(
-            #     config, serialized_cred_response)
-            # assert cred_response == deserialized_response
+#             cred_response = create_credential_response(
+#                 config, cred_request, pkS_bytes, kU, record.envU)
+#             serialized_cred_response = cred_response.serialize()
+#             # deserialized_response = deserialize_credential_response(
+#             #     config, serialized_cred_response)
+#             # assert cred_response == deserialized_response
 
-            ke2_state, ke2, ke2_serialized = kex.generate_ke2(serialized_cred_request, serialized_cred_response, ke1, info2, idU, pkU, idS, skS, pkS)
-            (server_nonce, hasher, km3, eskS, epkS, session_key) = ke2_state
-            epkS_bytes = ristretto255.ENCODE(*epkS)
+#             ke2_state, ke2, ke2_serialized = kex.generate_ke2(serialized_cred_request, serialized_cred_response, ke1, info2, idU, pkU, idS, skS, pkS)
+#             (server_nonce, hasher, km3, eskS, epkS, session_key) = ke2_state
+#             epkS_bytes = ristretto255.ENCODE(*epkS)
 
-            recovered_skU_bytes, recovered_pkS_bytes, recovered_export_key, rwdU, pseudorandom_pad, auth_key = recover_credentials(
-                config, pwdU, cred_metadata, cred_response)
+#             recovered_skU_bytes, recovered_pkS_bytes, recovered_export_key, rwdU, pseudorandom_pad, auth_key = recover_credentials(
+#                 config, pwdU, cred_metadata, cred_response)
 
-            recovered_skU = OS2IP(recovered_skU_bytes)
-            recovered_pkS = ristretto255.DECODE(recovered_pkS_bytes)
+#             recovered_skU = OS2IP(recovered_skU_bytes)
+#             recovered_pkS = ristretto255.DECODE(recovered_pkS_bytes)
 
-            client_session_key, ke3, ke3_serialized = kex.generate_ke3(serialized_cred_response, ke2, ke1_state, idS, recovered_pkS, idU, recovered_skU, pkU)
+#             client_session_key, ke3, ke3_serialized = kex.generate_ke3(serialized_cred_response, ke2, ke1_state, idS, recovered_pkS, idU, recovered_skU, pkU)
             
-            server_session_key = kex.finish(ke3, ke2_state)
+#             server_session_key = kex.finish(ke3, ke2_state)
 
-            # Check that recovered credentials match the registered credentials
-            assert export_key == recovered_export_key
-            assert recovered_skU_bytes == skU_bytes
-            assert recovered_pkS_bytes == pkS_bytes
-            assert client_session_key == server_session_key
+#             # Check that recovered credentials match the registered credentials
+#             assert export_key == recovered_export_key
+#             assert recovered_skU_bytes == skU_bytes
+#             assert recovered_pkS_bytes == pkS_bytes
+#             assert client_session_key == server_session_key
 
-            vector = {}
+#             vector = {}
 
-            # Protocol inputs
-            vector["idU"] = to_hex(idU)
-            vector["idS"] = to_hex(idS)
-            vector["pwdU"] = to_hex(pwdU)
-            vector["skU"] = to_hex(skU_bytes)
-            vector["pkU"] = to_hex(pkU_bytes)
-            vector["skS"] = to_hex(skS_bytes)
-            vector["pkS"] = to_hex(pkS_bytes)
+#             # Protocol inputs
+#             vector["idU"] = to_hex(idU)
+#             vector["idS"] = to_hex(idS)
+#             vector["pwdU"] = to_hex(pwdU)
+#             vector["skU"] = to_hex(skU_bytes)
+#             vector["pkU"] = to_hex(pkU_bytes)
+#             vector["skS"] = to_hex(skS_bytes)
+#             vector["pkS"] = to_hex(pkS_bytes)
 
-            # Protocol messages
-            vector["RegistrationRequest"] = to_hex(serialized_reg_request)
-            vector["RegistrationRequestBlind"] = to_hex(config.oprf_suite.group.serialize_scalar(reg_metadata))
-            vector["RegistrationResponse"] = to_hex(serialized_reg_response)
-            vector["RegistrationUpload"] = to_hex(serialized_record)
-            vector["CredentialRequest"] = to_hex(serialized_cred_request)
-            vector["CredentialRequestBlind"] = to_hex(config.oprf_suite.group.serialize_scalar(cred_metadata))
-            vector["CredentialResponse"] = to_hex(serialized_cred_response)
-            vector["KE1"] = to_hex(ke1_serialized)
-            vector["KE2"] = to_hex(ke2_serialized)
-            vector["KE3"] = to_hex(ke3_serialized)
+#             # Protocol messages
+#             vector["RegistrationRequest"] = to_hex(serialized_reg_request)
+#             vector["RegistrationRequestBlind"] = to_hex(config.oprf_suite.group.serialize_scalar(reg_metadata))
+#             vector["RegistrationResponse"] = to_hex(serialized_reg_response)
+#             vector["RegistrationUpload"] = to_hex(serialized_record)
+#             vector["CredentialRequest"] = to_hex(serialized_cred_request)
+#             vector["CredentialRequestBlind"] = to_hex(config.oprf_suite.group.serialize_scalar(cred_metadata))
+#             vector["CredentialResponse"] = to_hex(serialized_cred_response)
+#             vector["KE1"] = to_hex(ke1_serialized)
+#             vector["KE2"] = to_hex(ke2_serialized)
+#             vector["KE3"] = to_hex(ke3_serialized)
 
-            vector["info1"] = to_hex(info1)
-            vector["info2"] = to_hex(info2)
-            vector["client_nonce"] = to_hex(client_nonce)
-            vector["server_nonce"] = to_hex(server_nonce)
-            vector["epkU"] = to_hex(epkU_bytes)
-            vector["epkS"] = to_hex(epkS_bytes)
-            vector["shared_secret"] = to_hex(server_session_key)
+#             vector["info1"] = to_hex(info1)
+#             vector["info2"] = to_hex(info2)
+#             vector["client_nonce"] = to_hex(client_nonce)
+#             vector["server_nonce"] = to_hex(server_nonce)
+#             vector["epkU"] = to_hex(epkU_bytes)
+#             vector["epkS"] = to_hex(epkS_bytes)
+#             vector["shared_secret"] = to_hex(server_session_key)
 
-            # Intermediate computations
-            vector["kU"] = to_hex(config.oprf_suite.group.serialize_scalar(kU))
-            vector["envU_nonce"] = to_hex(nonce)
-            vector["envU"] = to_hex(record.envU.serialize())
-            vector["rwdU"] = to_hex(rwdU)
-            vector["pseudorandom_pad"] = to_hex(pseudorandom_pad)
-            vector["auth_key"] = to_hex(auth_key)
+#             # Intermediate computations
+#             vector["kU"] = to_hex(config.oprf_suite.group.serialize_scalar(kU))
+#             vector["envU_nonce"] = to_hex(nonce)
+#             vector["envU"] = to_hex(record.envU.serialize())
+#             vector["rwdU"] = to_hex(rwdU)
+#             vector["pseudorandom_pad"] = to_hex(pseudorandom_pad)
+#             vector["auth_key"] = to_hex(auth_key)
 
-            # Protocol outputs
-            vector["export_key"] = to_hex(export_key)
+#             # Protocol outputs
+#             vector["export_key"] = to_hex(export_key)
 
-            vectors.append(vector)
+#             vectors.append(vector)
 
-        return vectors
+#         return vectors
 
 # TODO(caw): instantiate and test out the new core, and work on minimizing the API!!
 def test_3dh_new():
@@ -240,11 +238,6 @@ def test_3dh_new():
     vector["export_key"] = to_hex(export_key)
 
     print(json.dumps(vector, sort_keys=True, indent=2))
-
-    # def generate_ke1(self, pwdU, info1, idU, skU, pkU, idS, pkS):
-    # def generate_ke2(self, msg, kU, envU, info2, idS, skS, pkS, idU, pkU):
-    # def generate_ke3(self, msg):
-    # def finish(self, msg):
 
 def main(path="vectors"):
     (skU, pkU) = ristretto255.keygen()

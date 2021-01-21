@@ -7,6 +7,7 @@ import json
 import hmac
 import hashlib
 import struct
+from hash import scrypt
 
 try:
     from sagelib.oprf import SetupBaseServer, SetupBaseClient, Evaluation, KeyGen
@@ -115,20 +116,17 @@ class OPAQUECore(object):
 
         return secret_credentials.skU, response.pkS, export_key
 
-
 class Configuration(object):
     def __init__(self, oprf_suite, hash_alg, harden):
         self.oprf_suite = oprf_suite
         self.hash_alg = hash_alg
         self.harden = harden
 
+def scrypt_harden(pwd):
+    return scrypt(pwd, b'', 32768, 8, 1, 64)
 
-def scrypt_harden(y, params): return hashlib.scrypt(
-    y, "", b'salt', params[0], params[1], params[2])
-
-
-def pbkdf_harden(y, params): return hashlib.pbkdf2_hmac(
-    'sha256', y, b'salt', params[0])
+def identity_harden(pwd):
+    return pwd
 
 default_opaque_configuration = Configuration(
-    oprf_ciphersuites[ciphersuite_ristretto255_sha512], hashlib.sha512, lambda y : pbkdf_harden(y, params=[100000]))
+    oprf_ciphersuites[ciphersuite_ristretto255_sha512], hashlib.sha512, identity_harden)
