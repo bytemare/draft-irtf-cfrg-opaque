@@ -48,6 +48,15 @@ def hkdf_expand(config, prk, info, L):
     T = reduce(concat, map(lambda c: c, Ts))
     return T[0:L]
 
+def to_hex(octet_string):
+    if isinstance(octet_string, str):
+        return "".join("{:02x}".format(ord(c)) for c in octet_string)
+    if isinstance(octet_string, bytes):
+        return "" + "".join("{:02x}".format(c) for c in octet_string)
+    assert isinstance(octet_string, bytearray)
+    return ''.join(format(x, '02x') for x in octet_string)
+
+
 # HKDF-Expand-Label(Secret, Label, Context, Length) =
 #   HKDF-Expand(Secret, HkdfLabel, Length)
 #
@@ -58,8 +67,9 @@ def hkdf_expand(config, prk, info, L):
 # } HkdfLabel;
 def hkdf_expand_label(config, secret, label, context, length):
     def build_label(length, label, context):
-        return int(length).to_bytes(2, 'big') + encode_vector_len(_as_bytes("OPAQUE ") + label, 1) + encode_vector_len(context, 1)
+        return I2OSP(length, 2) + encode_vector_len(_as_bytes("OPAQUE ") + label, 1) + encode_vector_len(context, 1)
     hkdf_label = build_label(length, label, context)
+    print(to_hex(hkdf_label))
     return hkdf_expand(config, secret, hkdf_label, length)
 
 # Derive-Secret(Secret, Label, Transcript) =
