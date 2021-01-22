@@ -863,7 +863,7 @@ the identity is acceptable or not to the peer. However, we note that the
 public keys of both the server and the user must always be those defined at
 time of password registration.
 
-# Authenticated Key Exchange Protocol Instantiations {#instantiations}
+# AKE instantiations {#instantiations}
 
 This section describes several instantiations of OPAQUE using different AKE protocols, all of
 which satisfy the forward secrecy and KCI properties discussed in {{security-considerations}}.
@@ -955,9 +955,9 @@ are performed in this group and represented here using multiplicative notation.
 
 OPAQUE with HMQV and OPAQUE with 3DH comprises:
 
-- KE1 = credential_request, nonceU, info1*, epkU
-- KE2 = credential_response, nonceS, info2*, epkS, Einfo2*, MAC(Km2; transcript2),
-- KE3 = info3*, Einfo3*, MAC(Km3; transcript3)}
+- KE1 = credential_request, nonceU, info, epkU
+- KE2 = credential_response, nonceS, epkS, einfo, MAC(Km2; transcript2),
+- KE3 = MAC(Km3; transcript3)}
 
 where:
 
@@ -973,45 +973,36 @@ and server OPRF values, respectively, as well as the envelope.
 - nonceU, nonceS are fresh random nonces chosen by client and server,
 respectively;
 
-- info1, info2, info3 denote optional application-specific information sent in
-the clear (e.g., they can include parameter negotiation, parameters for a
-hardening function, etc.);
+- info denotes application-specific information sent in the clear
+(e.g., they can include parameter negotiation, parameters for a hardening
+function, etc.);
 
-- Einfo2, Einfo3 denotes optional application-specific information sent
-encrypted under keys Ke2, Ke3 defined below;
+- einfo denotes application-specific information sent encrypted under key Ke2,
+defined below;
 
 - epkU, epkS are Diffie-Hellman ephemeral public keys chosen by user and
 server, respectively, which MUST be validated to be in the correct group
 (see {{validation}});
 
 - transcript2 includes the concatenation of the values
-credential_request, nonceU, info1*, epkU, credential_response,
-nonceS, info2*, epkS, Einfo2*;
+credential_request, nonceU, info, epkU, credential_response,
+nonceS, epkS, einfo;
 
-- transcript3 includes the concatenation of all elements in transcript2
-followed by info3*, Einfo3*;
-
-Notes:
-
-- The explicit concatenation of elements under transcript2 and transcript3 can be
- replaced with hashed values of these elements, or their combinations, using
- a collision-resistant hash (e.g., as in the transcript-hash of TLS 1.3 {{RFC8446}}).
-
-- The inclusion of the values credential_request and credential_response under
- transcript2 is needed for binding the underlying OPRF execution to that of the
- AKE session. On the other hand, including envU in transcript2 is not mandatory
- for security, though done as part of including credential_response.
+Note: The inclusion of the values credential_request and credential_response under
+transcript2 is needed for binding the underlying OPRF execution to that of the
+AKE session. On the other hand, including envU in transcript2 is not mandatory
+for security, though done as part of including credential_response.
 
 ### HMQV and 3DH key derivation {#hmqv-key-schedule}
 
-The above protocol requires MAC keys Km2, Km3, and optional encryption keys
-Ke2, Ke3, as well as generating a session key SK which is the
-AKE output for protecting subsequent traffic (or for generating further key
+The above protocol requires MAC keys Km2, Km3, and encryption key Ke2,
+as well as generating a session key SK which is the AKE output for
+protecting subsequent traffic (or for generating further key
 material). Key derivation uses HKDF {{RFC5869}} with a combination of the parties static
 and ephemeral private-public key pairs and the parties' identities idU, idS.
 See {{SecIdentities}} for more information about these identities.
 
-HMQV and 3DH use the following key schedule for computing Km2, Km3, Ke2, Ke3, and SK:
+HMQV and 3DH use the following key schedule for computing Km2, Km3, Ke2, and SK:
 
 ~~~
   HKDF-Extract(salt=0, IKM)
@@ -1021,13 +1012,12 @@ HMQV and 3DH use the following key schedule for computing Km2, Km3, Ke2, Ke3, an
       +--> Derive-Secret(., "session secret", info) = SK
 ~~~
 
-From `handshake_secret`, Km2, Km3, Ke2, and Ke3 are computed as follows:
+From `handshake_secret`, Km2, Km3, and Ke2 are computed as follows:
 
 ~~~
 Km2 = HKDF-Expand-Label(handshake_secret, "server mac", "", Hash.length)
 Km3 = HKDF-Expand-Label(handshake_secret, "client mac", "", Hash.length)
 Ke2 = HKDF-Expand-Label(handshake_secret, "server enc", "", key_length)
-Ke3 = HKDF-Expand-Label(handshake_secret, "client enc", "", key_length)
 ~~~
 
 `key_length` is the length of the key required for the AKE handshake encryption algorithm.
@@ -1125,10 +1115,10 @@ in IKEv2.
 
 OPAQUE with SIGMA-I comprises:
 
-- KE1 = credential_request, nonceU, info1*, epkU
-- KE2 = credential_response, nonceS, info2*, epkS, Einfo2*,
+- KE1 = credential_request, nonceU, info, epkU
+- KE2 = credential_response, nonceS, epkS, einfo,
        Sign(skS; transcript2-), MAC(Km2; idS),
-- KE3 = info3*, Einfo3*, Sign(skU; transcript3-), MAC(Km3; idU)}
+- KE3 = Sign(skU; transcript3-), MAC(Km3; idU)
 
 See explanation of fields in {{hmqv-3dh-protocol-messages}}.
 In addition, for the signed material,
@@ -1141,7 +1131,7 @@ information removed if so desired.
 
 ### SIGMA key derivation
 
-The key schedule for computing Km2, Km3, Ke2, Ke3, and SK is the same as
+The key schedule for computing Km2, Km3, Ke2, and SK is the same as
 specified in {{hmqv-key-schedule}}. The HKDF input parameter `info` is
 computed as follows:
 
