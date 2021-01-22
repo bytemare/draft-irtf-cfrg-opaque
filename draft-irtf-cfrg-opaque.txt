@@ -5,10 +5,10 @@
 Network Working Group                                        H. Krawczyk
 Internet-Draft                                       Algorand Foundation
 Intended status: Informational                                   K. Lewi
-Expires: 19 July 2021                                      Novi Research
+Expires: 26 July 2021                                      Novi Research
                                                                C.A. Wood
                                                               Cloudflare
-                                                         15 January 2021
+                                                         22 January 2021
 
 
                   The OPAQUE Asymmetric PAKE Protocol
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 19 July 2021.
+   This Internet-Draft will expire on 26 July 2021.
 
 Copyright Notice
 
@@ -440,19 +440,19 @@ Table of Contents
    offline, i.e., before the registration phase.  Once complete, the
    registration process proceeds as follows:
 
-     Client (pwdU, creds)                             Server (skS, pkS)
-     ------------------------------------------------------------------
-     request, blind = CreateRegistrationRequest(pwdU)
+    Client (pwdU, creds)                               Server (skS, pkS)
+    --------------------------------------------------------------------
+    (request, blind) = CreateRegistrationRequest(pwdU)
 
                                   request
                          ------------------------->
 
-                response, kU = CreateRegistrationResponse(request, pkS)
+               (response, kU) = CreateRegistrationResponse(request, pkS)
 
                                   response
                          <-------------------------
 
-     record, export_key = FinalizeRequest(pwdU, creds, blind, response)
+    (record, export_key) = FinalizeRequest(pwdU, creds, blind, response)
 
                                    record
                          ------------------------->
@@ -602,19 +602,19 @@ Steps:
    This section describes the message flow, encoding, and helper
    functions used in this stage.
 
-     Client (pwdU)                    Server (skS, pkS, credentialFile)
-     ------------------------------------------------------------------
-     request, blind = CreateCredentialRequest(pwdU)
+    Client (pwdU)                      Server (skS, pkS, credentialFile)
+    --------------------------------------------------------------------
+    (request, blind) = CreateCredentialRequest(pwdU)
 
                                   request
                          ------------------------->
 
-      response = CreateCredentialResponse(request, pkS, credentialFile)
+       response = CreateCredentialResponse(request, pkS, credentialFile)
 
                                   response
                          <-------------------------
 
-     skU, pkS, export_key = RecoverCredentials(pwdU, blind, response)
+    (skU, pkS, export_key) = RecoverCredentials(pwdU, blind, response)
 
                            (AKE with credentials)
                          <========================>
