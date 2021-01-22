@@ -66,7 +66,7 @@ class OPAQUE3DH(KeyExchange):
 
         prk = hkdf_extract(self.config, bytes([]), ikm)
         handshake_secret = derive_secret(self.config, prk, _as_bytes("handshake secret"), info)
-        session_key = derive_secret(self.config, prk, _as_bytes("handshake secret"), info)
+        session_key = derive_secret(self.config, prk, _as_bytes("session secret"), info)
 
         # Km2 = HKDF-Expand-Label(handshake_secret, "client mac", "", Hash.length)
         # Km3 = HKDF-Expand-Label(handshake_secret, "server mac", "", Hash.length)
@@ -95,10 +95,12 @@ class OPAQUE3DH(KeyExchange):
         hasher = hashlib.sha512()
         hasher.update(serialized_request)
         hasher.update(nonceU)
-        hasher.update(info1)
+        hasher.update(encode_vector(info1))
         hasher.update(ristretto255.ENCODE(*epkU))
 
         # TODO(caw): this isn't the best way to handle base vs custom credential mode
+        self.cred_request = cred_request
+        self.cred_metadata = cred_metadata
         self.idU = idU
         self.idS = idS
         self.pwdU = pwdU
@@ -140,12 +142,12 @@ class OPAQUE3DH(KeyExchange):
         hasher = hashlib.sha512()
         hasher.update(serialized_request)
         hasher.update(nonceU)
-        hasher.update(info1)
+        hasher.update(encode_vector(info1))
         hasher.update(ristretto255.ENCODE(*epkU))
         hasher.update(serialized_response)
         hasher.update(nonceS)
         hasher.update(ristretto255.ENCODE(*epkS))
-        hasher.update(e_info2)
+        hasher.update(encode_vector(e_info2))
         transcript_hash = hasher.digest()
 
         mac = hmac.digest(km2, transcript_hash, hashlib.sha512)
@@ -188,7 +190,7 @@ class OPAQUE3DH(KeyExchange):
         hasher.update(serialized_response)
         hasher.update(nonceS)
         hasher.update(ristretto255.ENCODE(*epkS))
-        hasher.update(e_info2)
+        hasher.update(encode_vector(e_info2))
         transcript_hash = hasher.digest()
 
         server_mac = hmac.digest(km2, transcript_hash, hashlib.sha512)
