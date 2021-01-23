@@ -322,8 +322,9 @@ operations, roles, and behaviors of OPAQUE:
 - pwdU: An opaque byte string containing the user's password.
 - (skX, pkX): An AKE key pair used in role X; skX is the private key and pkX is
   the public key. For example, (skU, pkU) refers to U's private and public key.
-- kX: An OPRF private key used in role X. For example, kU refers to U's private OPRF
-  key.
+- kX: An OPRF private key used for role X. For example, as described in
+  {{create-reg-response}}, kU refers to the private OPRF key for user U known
+  only to the server.
 - I2OSP and OS2IP: Convert a byte string to and from a non-negative integer as
   described in {{?RFC8017}}. Note that these functions operate on byte strings in
   big-endian byte order.
@@ -460,13 +461,13 @@ encryption and authentication.
 
 ~~~
 struct {
-  InnerEnvelopeMode mode;
+  EnvelopeMode mode;
   opaque nonce[32];
   opaque encrypted_creds<1..2^16-1>;
 } InnerEnvelope;
 
 struct {
-  InnerEnvelope contents;
+  InnerEnvelope inner_env;
   opaque auth_tag[Nh];
 } Envelope;
 ~~~
@@ -486,6 +487,7 @@ covering `InnerEnvelope` and `CleartextCredentials`.
 
 The full procedure for constructing `Envelope` and `InnerEnvelope` from
 `SecretCredentials` and `CleartextCredentials` is described in {{finalize-request}}.
+Note that only `SecretCredentials` are stored in the `Envelope` (in encrypted form).
 
 The `EnvelopeMode` value is specified as part of the configuration (see {{configurations}}).
 
@@ -595,7 +597,7 @@ Steps:
 3. Output (request, blind)
 ~~~
 
-#### CreateRegistrationResponse
+#### CreateRegistrationResponse {#create-reg-response}
 
 ~~~
 CreateRegistrationResponse(request, pkS)
@@ -606,7 +608,7 @@ Input:
 
 Output:
 - response, a RegistrationResponse structure
-- kU, the per-user OPRF key
+- kU, the per-user OPRF key known only to the server
 
 Steps:
 1. (kU, _) = KeyGen()
@@ -643,13 +645,13 @@ Steps:
 5. Create CleartextCredentials cleartext_creds with response.pkS
    and custom identifiers creds.idU and creds.idS if mode is customIdentifier
 6. nonce = random(32)
-7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, "Pad"), len(pt))
+7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, "Pad"), len(secret_creds))
 8. auth_key = HKDF-Expand(rwdU, concat(nonce, "AuthKey"), Nh)
 9. export_key = HKDF-Expand(rwdU, concat(nonce, "ExportKey"), Nh)
 10. encrypted_creds = xor(secret_creds, pseudorandom_pad)
-11. Create InnerEnvelope contents with (mode, nonce, encrypted_creds)
-12. auth_tag = HMAC(auth_key, concat(contents, cleartext_creds))
-13. Create Envelope envU with (contents, auth_tag)
+11. Create InnerEnvelope inner_env with (mode, nonce, encrypted_creds)
+12. auth_tag = HMAC(auth_key, concat(inner_env, cleartext_creds))
+13. Create Envelope envU with (inner_env, auth_tag)
 14. Create RegistrationUpload record with (envU, creds.pkU)
 15. Output (record, export_key)
 ~~~
@@ -929,7 +931,8 @@ Derive-Secret(Secret, Label, Transcript) =
 ~~~
 
 HKDF uses Hash as its underlying hash function, which is the same as that
-which is indicated by the OPAQUE instantiation.
+which is indicated by the OPAQUE instantiation. Note that the Label parameter
+is not a NULL-terminated string.
 
 ## Instantiation with HMQV and 3DH {#SecHmqv}
 
@@ -1149,15 +1152,17 @@ as `epkS^eskU` and by servers as `epkU^eskS`.
 
 # Configurations {#configurations}
 
-An OPAQUE configuration is a tuple (OPRF, Hash, MHF, AKE, EnvelopeMode). The OPAQUE OPRF protocol is
-drawn from the "base mode" variant of {{I-D.irtf-cfrg-voprf}}. The following OPRF
-ciphersuites supports are supported:
+An OPAQUE configuration is a tuple (OPRF, Hash, MHF, AKE, EnvelopeMode). The OPAQUE OPRF
+protocol is drawn from the "base mode" variant of {{I-D.irtf-cfrg-voprf}}. The following
+OPRF ciphersuites supports are supported:
 
 - OPRF(ristretto255, SHA-512)
 - OPRF(decaf448, SHA-512)
 - OPRF(P-256, SHA-256)
 - OPRF(P-384, SHA-512)
 - OPRF(P-521, SHA-512)
+
+Future configurations may specify different OPRF constructions.
 
 The OPAQUE hash function is that which is associated with the OPRF variant.
 For the variants specified here, only SHA-512 and SHA-256 are supported.

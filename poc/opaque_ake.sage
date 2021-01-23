@@ -80,7 +80,7 @@ class OPAQUE3DH(KeyExchange):
 
         # TODO(caw): rename these keys to client_mac_key, server_mac_key, and handshake_encryption_key
 
-        return km2, km3, ke2, session_key
+        return km2, km3, ke2, session_key, handshake_secret
 
     def generate_ke1(self, pwdU, info1, idU, skU, pkU, idS, pkS):
         cred_request, cred_metadata = self.core.create_credential_request(pwdU)
@@ -131,7 +131,7 @@ class OPAQUE3DH(KeyExchange):
 
         # K3dh = epkU^eskS || epkU^skS || pkU^eskS
         dh_components = TripleDHComponents(epkU, eskS, epkU, skS, pkU, eskS)
-        km2, km3, ke2, session_key = self.derive_3dh_keys(dh_components, nonceU, nonceS, idU, pkU, idS, pkS)
+        km2, km3, ke2, session_key, handshake_secret = self.derive_3dh_keys(dh_components, nonceU, nonceS, idU, pkU, idS, pkS)
 
         # Encrypt e_info2
         pad = hkdf_expand(self.config, ke2, _as_bytes("encryption pad"), len(info2))
@@ -157,8 +157,11 @@ class OPAQUE3DH(KeyExchange):
         self.hasher = hasher
         self.eskS = eskS
         self.epkS = epkS
+        self.km2 = km2
+        self.ke2 = ke2
         self.km3 = km3
         self.session_key = session_key
+        self.handshake_secret = handshake_secret
 
         return serialized_response + ke2.serialize()
 
@@ -184,7 +187,7 @@ class OPAQUE3DH(KeyExchange):
 
         # K3dh = epkS^eskU || pkS^eskU || epkS^skU
         dh_components = TripleDHComponents(epkS, eskU, pkS, eskU, epkS, skU)
-        km2, km3, ke2, session_key = self.derive_3dh_keys(dh_components, nonceU, nonceS, idU, pkU, idS, pkS)
+        km2, km3, ke2, session_key, handshake_secret = self.derive_3dh_keys(dh_components, nonceU, nonceS, idU, pkU, idS, pkS)
 
         hasher = self.hasher
         hasher.update(serialized_response)
@@ -199,6 +202,10 @@ class OPAQUE3DH(KeyExchange):
         # TODO(caw): decrypt e_info2 and pass it to the application
 
         self.session_key = session_key
+        self.km2 = km2
+        self.ke2 = ke2
+        self.km3 = km3
+        self.handshake_secret = handshake_secret
 
         # transcript3 == transcript2
         transcript_hash = hasher.digest()

@@ -234,6 +234,10 @@ def test_3dh_new():
     vector["rwdU"] = to_hex(core.registration_rwdU)
     vector["pseudorandom_pad"] = to_hex(core.pseudorandom_pad)
     vector["auth_key"] = to_hex(core.auth_key)
+    vector["km2"] = to_hex(client_kex.km2)
+    vector["km3"] = to_hex(client_kex.km3)
+    vector["ke2"] = to_hex(client_kex.ke2)
+    vector["handshake_secret"] = to_hex(client_kex.handshake_secret)
 
     # Protocol outputs
     vector["export_key"] = to_hex(export_key)
