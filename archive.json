@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-24T01:31:05.325768+00:00",
+  "timestamp": "2021-01-26T00:54:15.134616+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2563,7 +2563,7 @@
       "labels": [],
       "body": "The 3DH instantiation currently allows servers to send plaintext info in the second message, clients to send plaintext info in the third message, and clients to send encrypted info in the third message. This seems like too many options. In particular:\r\n\r\n1. Since there is no cryptographic algorithm negotiation as part of the protocol, the primary benefit of info2 is to avoid server encryption in the second flight. This means that applications need to make a determination about what data is sensitive or not. (Servers already have the encryption keys at this point, so they can send anything they need encrypted and avoid giving applications an option.)\r\n2. Clients have the encryption keys necessary to encrypt application info in the third message. Similar to (1), this means applications must make a choice about what data is sensitive. Removing that choice, by folding info3 into einfo3, simplifies things. \r\n3. Sending application info in the third flight does not make much sense to me in general. If clients need to send info in the third flight, it can be encrypted using keys derived from the output of OPAQUE, i.e., the main traffic secret `SK`, rather than keys derived from `handshake_secret`. I can't think of an example where a client would want to send data in the third flight that MUST be processed before the key confirmation message.\r\n\r\nBased on the above, I think we should do the following: remove `info2`, `info3`, and `einfo3` from the protocol. `info1` and `einfo2` are sufficient for clients and servers to safely exchange application info as a preamble to the traffic secret, and all other info can be sent, encrypted, under a key derived from SK. \r\n\r\n@hugokraw, @kevinlewi, what do you think?",
       "createdAt": "2021-01-08T03:48:00Z",
-      "updatedAt": "2021-01-10T01:56:57Z",
+      "updatedAt": "2021-01-24T20:17:11Z",
       "closedAt": null,
       "comments": [
         {
@@ -2635,6 +2635,13 @@
           "body": "> The document could give indications to implementors and users on how to properly use the output shared secret key (e.g. derive per need - encryption, token, etc.), and cite immediate usage for encryption as an example.\r\n\r\nThanks, I think this is a good suggestion -- perhaps it would be worth adding a short sentence/paragraph to explain this.",
           "createdAt": "2021-01-10T01:56:56Z",
           "updatedAt": "2021-01-10T01:56:56Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "i have not quite understood concrete applications of these fields. however i have a feeling that the `*info*` fields can be related to protocols building upon opaque and can be used to convey protocol specific info, while the application would always use shared secret SK.",
+          "createdAt": "2021-01-24T20:17:11Z",
+          "updatedAt": "2021-01-24T20:17:11Z"
         }
       ]
     },
@@ -2833,7 +2840,7 @@
       "labels": [],
       "body": "I'd like to reach an agreement on the names of variables we use for OPAQUE, which also impact the parameters to each of the test vectors we release. Here is what I have so far (open to feedback!):\r\n\r\nInputs:\r\n\r\n```\r\n    client_s_pk: Client's static public key\r\n    client_s_sk: Client's static private key\r\n    client_e_pk: Client's ephemeral public key\r\n    client_e_sk: Client's ephemeral private key\r\n    server_s_pk: Server's static public key\r\n    server_s_sk: Server's static private key\r\n    server_e_pk: Server's ephemeral public key\r\n    server_e_sk: Server's ephemeral private key\r\n    password: Client's password\r\n    client_identifier: idU\r\n    server_identifier: idS\r\n    blinding_factor_registration: Scalar used to blind client's password during registration\r\n    blinding_factor_login: Scalar used to blind client's password during login\r\n    oprf_key: kU, the server's secret key for the OPRF\r\n    envelope_nonce: nonce used for envelope\r\n    client_nonce: nonce from client used in AKE\r\n    server_nonce: nonce from server used in AKE\r\n    info1: Plaintext info field populated by client in first AKE message\r\n    info2: Encrypted info field populated by server in second AKE message\r\n```\r\n\r\nOutputs:\r\n\r\n```\r\n    registration_request: First message of registration\r\n    registration_response: Second message of registration\r\n    registration_upload: Third message of registration\r\n    credential_request: First message of login\r\n    credential_response: Second message of login\r\n    credential_finalization: Third message of login\r\n    password_file: The object stored by the server after registration has completed\r\n    export_key: The export_key parameter output by registration and login's final step on the client\r\n    shared_secret: The output of the client and server after the AKE\r\n```\r\n\r\nThere is also an opportunity to publish \"intermediate values\" here, such as the envelope bytes, the \"rwdU\" value, etc. They are not included here at the moment, but we could add additional values to represent them as well, if desired.",
       "createdAt": "2021-01-21T17:16:39Z",
-      "updatedAt": "2021-01-24T00:17:04Z",
+      "updatedAt": "2021-01-26T00:02:03Z",
       "closedAt": null,
       "comments": [
         {
@@ -2870,6 +2877,27 @@
           "body": "- `client_s_sk/pk` -> `sku/pku`\n- `cliient_e_sk/pk` -> `esku/epku`\n- `server_s_sk/pk` -> `sks/pks`\n- `server_e_sk/pk` -> `esks/epks`",
           "createdAt": "2021-01-24T00:17:04Z",
           "updatedAt": "2021-01-24T00:17:04Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks for the feedback @stef and @bytemare! I am not super tied to any of the original names I originally proposed, and am supportive of all of the changes mentioned. Will leave it up to @chris-wood to also chime in with his opinion!",
+          "createdAt": "2021-01-25T06:17:21Z",
+          "updatedAt": "2021-01-25T06:17:21Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I only care that the names are consistent across the spec and test vectors :-) to that end, if folks are generally okay with what's in the draft (pkU versus client_s_pk, for example), then my preference would be to stick with them.",
+          "createdAt": "2021-01-25T16:00:46Z",
+          "updatedAt": "2021-01-25T16:00:46Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "+1 for consistency. What that might be in the end is less important, as long as one understands when reading the document and looks at the vectors.",
+          "createdAt": "2021-01-26T00:02:03Z",
+          "updatedAt": "2021-01-26T00:02:03Z"
         }
       ]
     },
@@ -2885,7 +2913,7 @@
       "labels": [],
       "body": "Here are a subset of the steps for envelope construction:\r\n\r\n```\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUE01\")\r\n3. rwdU = HKDF-Extract(\"rwdU\", Harden(y, params))\r\n4. Create SecretCredentials secret_creds with creds.skU\r\n5. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n6. nonce = random(32)\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, \"Pad\"), len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, concat(nonce, \"AuthKey\"), Nh)\r\n9. export_key = HKDF-Expand(rwdU, concat(nonce, \"ExportKey\"), Nh)\r\n...\r\n```\r\n\r\nCan we instead change this to:\r\n```\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. Create SecretCredentials secret_creds with creds.skU\r\n6. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, \"Pad\", len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, \"AuthKey\", Nh)\r\n9. export_key = HKDF-Expand(rwdU, \"ExportKey\", Nh)\r\n```\r\n?\r\n\r\nAdditionally, we could consider bundling up steps 7-9 into a single HKDF-Expand call, and taking slices of that output for each of the individual variables.",
       "createdAt": "2021-01-21T21:30:46Z",
-      "updatedAt": "2021-01-23T23:42:56Z",
+      "updatedAt": "2021-01-24T20:04:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -2922,6 +2950,20 @@
           "body": "Would it therefore be necessary to keep using the nonce in these HKDF derivations ? \nThe harden function could output something the length of rwdu + nonce, and that would be fed into the HKDF expansions.",
           "createdAt": "2021-01-23T23:42:56Z",
           "updatedAt": "2021-01-23T23:42:56Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "what would be the benefit of\r\n\r\n> Additionally, we could consider bundling up steps 7-9 into a single HKDF-Expand call, and taking slices of that output for each of the individual variables.\r\n?",
+          "createdAt": "2021-01-24T20:04:05Z",
+          "updatedAt": "2021-01-24T20:04:05Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "and what is the benefit of having the nonce included earlier in this procedure?",
+          "createdAt": "2021-01-24T20:04:35Z",
+          "updatedAt": "2021-01-24T20:04:35Z"
         }
       ]
     },
@@ -2971,6 +3013,22 @@
           "updatedAt": "2021-01-23T01:36:29Z"
         }
       ]
+    },
+    {
+      "number": 124,
+      "id": "MDU6SXNzdWU3OTI4ODAwNTY=",
+      "title": "bunch of questions - after a full reading of the latest draft",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/124",
+      "state": "OPEN",
+      "author": "stef",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "> 2OSP and OS2IP: Convert a byte string to and from a non-negative integer as described in {{?RFC8017}}.\r\n\r\nlink to https://tools.ietf.org/html/rfc8017#section-4.1 and https://tools.ietf.org/html/rfc8017#section-4.2\r\n\r\nperhaps also note that this is also known as the htons/ntohs functions in POSIX - implementors might find this very helpful!\r\n\r\n------- \r\n\r\n> kX: An OPRF private key used in role X. For example, kU refers to U's private OPRF key.\r\n\r\nis there any other role besides kU?\r\n\r\n------- \r\n\r\n> random(n): Generate a random byte string of length n bytes.\r\n\r\nnote that this random string should be of cryptographic quality. although there is a note under all the definitions saying so, it's better to have it closer where it matters and less ignored.\r\n\r\n\r\n------- \r\n\r\nin #cryptographic-protocol-and-algorithm-dependencies-dependencies\r\n\r\nthe note that only the base variant of the OPRF is needed is also a bit far away from where the OPRF dependency is specified.\r\n\r\n------- \r\n\r\n> auth_tag : Authentication tag protecting the contents of the envelope, covering InnerEnvelope and CleartextCredentials\r\n\r\nthen it notes:\r\n> The full procedure for constructing Envelope and InnerEnvelope from SecretCredentials and CleartextCredentials is described in {{finalize-request}}.\r\n\r\nwhich is:\r\n\r\n> 12. auth_tag = HMAC(auth_key, concat(contents, cleartext_creds))\r\n\r\nit's all there but quite dispersed spatially, someone trying to implement this has to jump around in the doc, it's very hard to read this spec sequentially.\r\n\r\n------- \r\n\r\n> Credential information corresponding to the configuration-specific mode, along with the user public key pkU and private key skU, are stored in a Credentials object with the following named fields:\r\n> skU, pkU, idU, idS\r\n\r\nit is not necessary to specify for interoperability how an implementation stores these values. also for security i think it is better to handle skU seperatately from the other values - or maybe not, depending on the configuration, if any of the other values is also to be kept secret. a sensible implementation wants to actually protect the sensitive values differently from the public values. maybe by storing them in mprotected/sanitized-after-use storage, in secure elements, or something else.\r\n\r\ni do see how it is a shortcut to list all the necessary items from the creds struture as an input to finalizerequest though.\r\n\r\n> Clients MUST NOT use the same key pair (skU, pkU) for two different accounts.\r\n\r\nwhy is this, when the server can use the same keypair for different accounts? in the case when idU == pkU this is not even possible i guess.\r\n\r\n------\r\n\r\n> pkS : An encoded public key that will be used for the online authenticated key exchange stage.\r\n\r\nadd explicitly that this is the *servers* pubkey\r\n\r\nsimilarly be explicit also about this:\r\n\r\n> pkU : An encoded public key, corresponding to the private key skU.\r\n\r\n-------\r\n\r\n#credential-file\r\n\r\nwe agree these things need to be persisted, however i do not see how this helps interoperability or security specifying this struct. i propose to change the wording to something like:\r\n\r\nthe server needs to be able to reproduce the following values for the online phase.\r\n\r\nan implementation might choose to generate kU by doing a KDF on some global secret value in combination with idU for example, then this storage of kU can be skipped. again we should realize that kU is a sensitive value which needs protection (like sanitization, possibly also at-rest encryption, not being swapped to disk, stored in a secure element, etc) while envU is an encrypted blob that does not need these kind of protections. in case pkU == idU it might be possbile that envU is stored in a hashdictionary that is indexed by idU, and thus pkU does not need to be stored at all. lumping these values together and requiring them to be stored in this structure creates unnecessary limitations on implementations. while this specification might harm security, it does not really improve interoperability.\r\n\r\neither delete this section, or make this optional, and put it into an non-binding appendix.\r\n\r\nanother thing against this, is the usage of export-keys, in case an implementation chooses to encrypt data with an export-key but wants to stay stateless on the client, then the export-key encrypted data might also be stored on the server.\r\n",
+      "createdAt": "2021-01-24T20:01:04Z",
+      "updatedAt": "2021-01-24T20:01:04Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -7463,26 +7521,42 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTYwMjgwOTA4",
       "title": "Minor updates",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/123",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "This addresses most small things in @crockeea's review. I'll add the updated protocol descriptions after the structural refactor, @kevinlewi!",
       "createdAt": "2021-01-23T00:28:43Z",
-      "updatedAt": "2021-01-23T00:28:43Z",
+      "updatedAt": "2021-01-25T15:54:01Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "ac3192db44619e394344a4bff648711ffd827c4b",
       "headRepository": "cfrg/draft-irtf-cfrg-opaque",
       "headRefName": "caw/minor-updates",
       "headRefOid": "35e3fe0418968fb7773bc8cb5c4b3090ad9464b3",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2021-01-25T15:54:01Z",
+      "mergedAt": "2021-01-25T15:54:00Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "50b3ce795fe0ec19b74e98dcfcf482992b9bb692"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTc1MDg5NTY0",
+          "commit": {
+            "abbreviatedOid": "35e3fe0"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Looks great!!",
+          "createdAt": "2021-01-25T06:14:12Z",
+          "updatedAt": "2021-01-25T06:14:12Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
