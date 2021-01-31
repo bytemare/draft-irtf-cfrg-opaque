@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-28T00:54:56.560378+00:00",
+  "timestamp": "2021-01-31T00:58:05.481213+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2934,7 +2934,7 @@
       "labels": [],
       "body": "Here are a subset of the steps for envelope construction:\r\n\r\n```\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUE01\")\r\n3. rwdU = HKDF-Extract(\"rwdU\", Harden(y, params))\r\n4. Create SecretCredentials secret_creds with creds.skU\r\n5. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n6. nonce = random(32)\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, \"Pad\"), len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, concat(nonce, \"AuthKey\"), Nh)\r\n9. export_key = HKDF-Expand(rwdU, concat(nonce, \"ExportKey\"), Nh)\r\n...\r\n```\r\n\r\nCan we instead change this to:\r\n```\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. Create SecretCredentials secret_creds with creds.skU\r\n6. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, \"Pad\", len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, \"AuthKey\", Nh)\r\n9. export_key = HKDF-Expand(rwdU, \"ExportKey\", Nh)\r\n```\r\n?\r\n\r\nAdditionally, we could consider bundling up steps 7-9 into a single HKDF-Expand call, and taking slices of that output for each of the individual variables.",
       "createdAt": "2021-01-21T21:30:46Z",
-      "updatedAt": "2021-01-27T01:07:02Z",
+      "updatedAt": "2021-01-30T15:25:06Z",
       "closedAt": null,
       "comments": [
         {
@@ -2999,6 +2999,13 @@
           "body": "simplification, and not concatenating strings is a very good reason to do this. thumbsup!",
           "createdAt": "2021-01-27T01:07:02Z",
           "updatedAt": "2021-01-27T01:07:02Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I like this suggestion a lot, with one exception: I'd prefer we keep the expand calls separate. There were, in the past, issues where the attacker played with the expand parameters to try and recover the secrets. Keeping them separate helps not reintroduce that issue.",
+          "createdAt": "2021-01-30T15:25:06Z",
+          "updatedAt": "2021-01-30T15:25:06Z"
         }
       ]
     },
@@ -7521,7 +7528,7 @@
       "labels": [],
       "body": "In the steps for functions, we surround multiple output params with\r\nparentheses:\r\n```\r\nSteps:\r\n1. (blind, M) = Blind(pwdU)\r\n2. Create RegistrationRequest request with M\r\n3. Output (request, blind)\r\n```\r\n\r\n@crockeea pointed out that we should be consistent. From\r\nhttps://github.com/cfrg/draft-irtf-cfrg-opaque/issues/112#issuecomment-760522234,\r\n\"Be consistent about the use of parens for functions which output multiple\r\nvalues (see protocol diagrams at top of section 3.2 and at the top of 3.3)\".",
       "createdAt": "2021-01-15T02:19:51Z",
-      "updatedAt": "2021-01-22T23:51:39Z",
+      "updatedAt": "2021-01-30T17:26:05Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "7539e8665bae01e8c96f79b8f378f56dcbb8bab7",
@@ -7598,24 +7605,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTYxNzk0MDU4",
       "title": "Structural refactor",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/125",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "This is a pretty invasive change that tries to better organize the document and protocol description into its two steps: registration and authentication. It also includes more wire format details for the 3DH instantiation, and removes HMQV and SIGMA-I in the process. (We can bring them back in a future change as needed.) The outline now looks like so:\r\n\r\n```\r\n   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3\r\n     1.1.  Requirements Notation . . . . . . . . . . . . . . . . . .   5\r\n     1.2.  Notation  . . . . . . . . . . . . . . . . . . . . . . . .   5\r\n   2.  Cryptographic Protocol and Algorithm Dependencies . . . . . .   6\r\n   3.  Offline Registration  . . . . . . . . . . . . . . . . . . . .   7\r\n     3.1.  Credential Storage  . . . . . . . . . . . . . . . . . . .   8\r\n     3.2.  Registration Messages . . . . . . . . . . . . . . . . . .  10\r\n     3.3.  Registration Functions  . . . . . . . . . . . . . . . . .  11\r\n       3.3.1.  CreateRegistrationRequest . . . . . . . . . . . . . .  11\r\n       3.3.2.  CreateRegistrationResponse  . . . . . . . . . . . . .  11\r\n       3.3.3.  FinalizeRequest . . . . . . . . . . . . . . . . . . .  11\r\n       3.3.4.  CredentialFile  . . . . . . . . . . . . . . . . . . .  13\r\n   4.  Online Authenticated Key Exchange . . . . . . . . . . . . . .  13\r\n     4.1.  Credential Retrieval  . . . . . . . . . . . . . . . . . .  13\r\n       4.1.1.  Credential Retrieval Messages . . . . . . . . . . . .  14\r\n       4.1.2.  Credential Retrieval Functions  . . . . . . . . . . .  14\r\n     4.2.  AKE Instantiations  . . . . . . . . . . . . . . . . . . .  16\r\n       4.2.1.  Key Schedule Utility Functions  . . . . . . . . . . .  17\r\n       4.2.2.  OPAQUE-3DH Instantiation  . . . . . . . . . . . . . .  18\r\n       4.2.3.  Alternate AKE instantiations  . . . . . . . . . . . .  20\r\n   5.  Configurations  . . . . . . . . . . . . . . . . . . . . . . .  20\r\n```\r\n\r\ncc @hugokraw, @crockeea",
       "createdAt": "2021-01-26T13:47:50Z",
-      "updatedAt": "2021-01-27T22:01:58Z",
+      "updatedAt": "2021-01-30T15:19:17Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "50b3ce795fe0ec19b74e98dcfcf482992b9bb692",
       "headRepository": "cfrg/draft-irtf-cfrg-opaque",
       "headRefName": "caw/restructure-doc",
-      "headRefOid": "42c6cfc7fe40015d5e9e4956e0bfe76045bdc357",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "db6a82ac6fd5661447ccc3773752ed12fe812dcd",
+      "closedAt": "2021-01-30T15:19:17Z",
+      "mergedAt": "2021-01-30T15:19:17Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "3451ec3e3e5f6ab3d06247a8d4e7bf1488749c64"
+      },
       "comments": [
         {
           "author": "hugokraw",
@@ -7656,7 +7665,7 @@
               "originalPosition": 665,
               "body": "The data encryption scheme for the envelope encryption is already PQ, and to me, any mention of \"data encryption\" outside the key exchange step is outside the scope of this doc. It's not clear which one you are referring to here, but either way, I would remove the references to data encryption.",
               "createdAt": "2021-01-26T18:43:55Z",
-              "updatedAt": "2021-01-26T18:46:39Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             }
           ]
         },
@@ -7676,7 +7685,7 @@
               "originalPosition": 665,
               "body": "How about the following formulation (it refers to 'application data' explicitly to avoid confusion of what data we are talking about):\r\nNote that such an instantiation is not quantum safe unless the OPRF is quantum safe. However, an OPAQUE instantiation where the AKE is quantum safe, but the OPRF is not, would still ensure the confidentiality of application data encrypted under session_key (or a key derived from it) with a quantum-safe encryption function.",
               "createdAt": "2021-01-26T23:17:51Z",
-              "updatedAt": "2021-01-26T23:17:51Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             }
           ]
         },
@@ -7696,7 +7705,7 @@
               "originalPosition": 665,
               "body": "Btw, we never say what one does with session_key. We may not want to add a derivation of traffic keys as in TLS but we should comment that deriving such keys would be the typical use although applications may have other uses. ",
               "createdAt": "2021-01-26T23:20:09Z",
-              "updatedAt": "2021-01-26T23:20:10Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             }
           ]
         },
@@ -7716,35 +7725,149 @@
               "originalPosition": 68,
               "body": "Nit: Perhaps at this point, we should clarify that a bunch of the variables depicted above will be clarified later? Or maybe we can reference a description to them somewhere. After reading this, I become immediately confused... but maybe it is just me :) ",
               "createdAt": "2021-01-27T00:47:17Z",
-              "updatedAt": "2021-01-27T00:59:49Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             },
             {
               "originalPosition": 72,
               "body": "Nit: \"the S stores U's credentials\" -> \"S stores U's credentials\" / \"the server stores the user's credentials\"",
               "createdAt": "2021-01-27T00:48:08Z",
-              "updatedAt": "2021-01-27T00:59:49Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             },
             {
               "originalPosition": 205,
               "body": "Rename exporter_key to export_key",
               "createdAt": "2021-01-27T00:49:12Z",
-              "updatedAt": "2021-01-27T00:59:49Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             },
             {
               "originalPosition": 382,
               "body": "Nit: Perhaps change the anchor link from `#SecHmqv` to something else?",
               "createdAt": "2021-01-27T00:50:55Z",
-              "updatedAt": "2021-01-27T00:59:49Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
             },
             {
               "originalPosition": 649,
               "body": "nit: info2 does not seem to be defined anywhere",
               "createdAt": "2021-01-27T00:54:29Z",
-              "updatedAt": "2021-01-27T00:59:49Z"
+              "updatedAt": "2021-01-29T15:13:15Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTc5MzM0OTI2",
+          "commit": {
+            "abbreviatedOid": "42c6cfc"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-29T14:59:56Z",
+          "updatedAt": "2021-01-29T14:59:56Z",
+          "comments": [
+            {
+              "originalPosition": 68,
+              "body": "Yep, good idea!",
+              "createdAt": "2021-01-29T14:59:56Z",
+              "updatedAt": "2021-01-29T15:13:15Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTc5MzQ4MDMx",
+          "commit": {
+            "abbreviatedOid": "db6a82a"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-01-29T15:14:06Z",
+          "updatedAt": "2021-01-29T15:14:07Z",
+          "comments": [
+            {
+              "originalPosition": 665,
+              "body": "Thanks, @hugokraw -- I applied your suggested text, and added a note describing that applications can use `session_key` to derive additional keying material.",
+              "createdAt": "2021-01-29T15:14:07Z",
+              "updatedAt": "2021-01-29T15:14:07Z"
             }
           ]
         }
       ]
+    },
+    {
+      "number": 126,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY0NDQ0MTYy",
+      "title": "Simplify envelope secret derivation",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/126",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #120.\r\n\r\ncc @hugokraw ",
+      "createdAt": "2021-01-30T15:33:26Z",
+      "updatedAt": "2021-01-30T15:33:31Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "3451ec3e3e5f6ab3d06247a8d4e7bf1488749c64",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/simplify-secret-derivation",
+      "headRefOid": "00810795fa60f5a5e77cee205d1e698d3b533077",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 127,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY0NDc2Mzgy",
+      "title": "Update the keyagreement reference",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/127",
+      "state": "CLOSED",
+      "author": "creemama",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "so that the \"Update Editor's Copy\" GitHub action succeeds.\r\n\r\nThe GitHub action fails with the following message:\r\n```\r\n/github/home/.cache/xml2rfc/reference.DOI.10.6028_NIST.SP.800-56Ar3--anchor=keyagreement.xml: fetching\r\n*** 404 NOT FOUND while fetching https://xml2rfc.tools.ietf.org/public/rfc/bibxml7/reference.DOI.10.6028/NIST.SP.800-56Ar3.xml?anchor=keyagreement\r\n*** No such file or directory @ rb_sysopen - /github/home/.cache/xml2rfc/reference.DOI.10.6028_NIST.SP.800-56Ar3--anchor=keyagreement.xml for /github/home/.cache/xml2rfc/reference.DOI.10.6028_NIST.SP.800-56Ar3--anchor=keyagreement.xml\r\nError: Unable to parse the XML document: /dev/stdin\r\nmake: *** [lib/main.mk:68: draft-irtf-cfrg-opaque.xml] Error 1\r\n```\r\nSee https://github.com/cfrg/draft-irtf-cfrg-opaque/runs/1797781503 .\r\n\r\nThere is an alternate link to this reference here:\r\nhttps://xml2rfc.tools.ietf.org/public/rfc/bibxml-nist/reference.NIST.NIST.SP.800-56Ar3.xml .",
+      "createdAt": "2021-01-30T17:48:25Z",
+      "updatedAt": "2021-01-30T21:20:12Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "3451ec3e3e5f6ab3d06247a8d4e7bf1488749c64",
+      "headRepository": "creemama/draft-irtf-cfrg-opaque",
+      "headRefName": "keyagreement",
+      "headRefOid": "bce6d06160b760c6ff3e5c02f0c88e57a4acafed",
+      "closedAt": "2021-01-30T17:59:30Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "creemama",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Awww shucks, I thought that would work. Let me see if I can figure this out.",
+          "createdAt": "2021-01-30T17:50:41Z",
+          "updatedAt": "2021-01-30T17:50:41Z"
+        },
+        {
+          "author": "creemama",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "The GitHub action tries to pull from \r\nhttps://xml2rfc.tools.ietf.org/public/rfc/bibxml2/reference.NIST.NIST.SP.800-56Ar3.xml\r\ninstead of\r\nhttps://xml2rfc.tools.ietf.org/public/rfc/bibxml-nist/reference.NIST.NIST.SP.800-56Ar3.xml .\r\n\r\nhttps://xml2rfc.tools.ietf.org/public/rfc/bibxml2 has some NIST references but not the one we want.",
+          "createdAt": "2021-01-30T17:59:30Z",
+          "updatedAt": "2021-01-30T17:59:30Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Don't worry about fixing this. I'll take care of it.",
+          "createdAt": "2021-01-30T21:20:12Z",
+          "updatedAt": "2021-01-30T21:20:12Z"
+        }
+      ],
+      "reviews": []
     }
   ]
 }
