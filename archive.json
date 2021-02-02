@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-01-31T00:58:05.481213+00:00",
+  "timestamp": "2021-02-02T00:51:30.280963+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2927,15 +2927,15 @@
       "id": "MDU6SXNzdWU3OTE1MDgwMzE=",
       "title": "Simplifying envelope construction",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/120",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Here are a subset of the steps for envelope construction:\r\n\r\n```\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUE01\")\r\n3. rwdU = HKDF-Extract(\"rwdU\", Harden(y, params))\r\n4. Create SecretCredentials secret_creds with creds.skU\r\n5. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n6. nonce = random(32)\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, \"Pad\"), len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, concat(nonce, \"AuthKey\"), Nh)\r\n9. export_key = HKDF-Expand(rwdU, concat(nonce, \"ExportKey\"), Nh)\r\n...\r\n```\r\n\r\nCan we instead change this to:\r\n```\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. Create SecretCredentials secret_creds with creds.skU\r\n6. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, \"Pad\", len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, \"AuthKey\", Nh)\r\n9. export_key = HKDF-Expand(rwdU, \"ExportKey\", Nh)\r\n```\r\n?\r\n\r\nAdditionally, we could consider bundling up steps 7-9 into a single HKDF-Expand call, and taking slices of that output for each of the individual variables.",
       "createdAt": "2021-01-21T21:30:46Z",
-      "updatedAt": "2021-01-30T15:25:06Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-01T14:31:15Z",
+      "closedAt": "2021-02-01T14:31:15Z",
       "comments": [
         {
           "author": "bytemare",
@@ -3006,6 +3006,27 @@
           "body": "I like this suggestion a lot, with one exception: I'd prefer we keep the expand calls separate. There were, in the past, issues where the attacker played with the expand parameters to try and recover the secrets. Keeping them separate helps not reintroduce that issue.",
           "createdAt": "2021-01-30T15:25:06Z",
           "updatedAt": "2021-01-30T15:25:06Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "@kevinlewi I understood this :) what I meant is to not keep using the nonce in HKDF-Expand.\r\nLike so https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/126/commits/00810795fa60f5a5e77cee205d1e698d3b533077#diff-09a16f0dd79bfde63faf766f3c58ba43f6795026ce020fa36006cfec7094cf0aR642",
+          "createdAt": "2021-01-31T21:45:31Z",
+          "updatedAt": "2021-01-31T21:45:31Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "General  comment: I appreciate that you guys add @hugokraw when discussing stuff that needs my attention. But since my attention these days is divided into so many things, please double check with me before approving any such crypto-relevant changes if I do not provide feedback.\r\n\r\nRegarding involving the nonce into the derivation of RwdU: I am ok with it. The reason Nonce was used in the derivation of pad is for the (not too common but possible case) that someone would re-register same PwdU (and without the server changing kU), but would change the registered skU. If this happened, one would be using the same pad to encrypt two different plaintexts.  But the proposed change is correct: Once you use the nonce to modify the RwdU derivation there is no need to include the nonce in the derivation of pseudorandom_pad as long as Nonce is chosen anew each time a password is registered (or re-registered). \r\n\r\nLastly, there was a comment in this thread about the nonce helping in the case of different users using the same password and same kU by the server. A server should  never use the same kU with two different users. We may want to add such remark in the security considerations and also around the place where we specify the choice of kU.  \r\n",
+          "createdAt": "2021-02-01T05:01:19Z",
+          "updatedAt": "2021-02-01T05:01:19Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Lastly, there was a comment in this thread about the nonce helping in the case of different users using the same password and same kU by the server. A server should never use the same kU with two different users. We may want to add such remark in the security considerations and also around the place where we specify the choice of kU.\r\n\r\nGood idea -- I'll make a note of this and address it in a future change.",
+          "createdAt": "2021-02-01T13:36:33Z",
+          "updatedAt": "2021-02-01T13:36:33Z"
         }
       ]
     },
@@ -3071,6 +3092,110 @@
       "updatedAt": "2021-01-24T20:01:04Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 128,
+      "id": "MDU6SXNzdWU3OTc5MjE0MDg=",
+      "title": "HMQV and SIGMA to an Appendix",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/128",
+      "state": "OPEN",
+      "author": "hugokraw",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I want the HMQV and SIGMA specification to appear in an appendix. It serves as illustration and guidance for these and other instantiations.  Note that there is text referring to these protocols (e.g., introduction) that needs to be updated.",
+      "createdAt": "2021-02-01T03:41:32Z",
+      "updatedAt": "2021-02-01T03:44:55Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 129,
+      "id": "MDU6SXNzdWU3OTg0NDUxMjI=",
+      "title": "Clarify OPRF mode",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/129",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "OPAQUE only requires the OPRF \"base\" mode, which does not have evaluation verification.",
+      "createdAt": "2021-02-01T15:14:46Z",
+      "updatedAt": "2021-02-01T15:14:46Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 130,
+      "id": "MDU6SXNzdWU3OTg0NTEyMTA=",
+      "title": "Elaborate on export_key usage",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/130",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Applications can use export_key in a variety of ways (after OPAQUE completes successfully). The draft should describe some of these in more detail, perhaps in an appendix to keep the main body of text slim.\r\n\r\ncc @rot256",
+      "createdAt": "2021-02-01T15:21:00Z",
+      "updatedAt": "2021-02-02T00:49:34Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Here is one sample text that we could add to the appendix:\r\n\r\n> The export key can be used (separately from the OPAQUE protocol) to provide confidentiality and integrity to other data which only the client should be able to process. For instance, if the server is expected to maintain any client-side secrets which require a password to access, then this export key can be used to encrypt these secrets so that they remain hidden from the server.\r\n\r\nThis only describes one application, but it is the main application that comes to mind for me.",
+          "createdAt": "2021-02-02T00:49:34Z",
+          "updatedAt": "2021-02-02T00:49:34Z"
+        }
+      ]
+    },
+    {
+      "number": 131,
+      "id": "MDU6SXNzdWU3OTg0Njg1MjM=",
+      "title": "Static DH oracle text",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/131",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "We should ensure that we acknowledge this type of attack in theory, and describe how OPAQUE deals with it. In particular, since each OPRF key is per-user, which means that any reduction in security is per-user, which is unlikely to be a problem in practice.",
+      "createdAt": "2021-02-01T15:39:48Z",
+      "updatedAt": "2021-02-01T19:52:32Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "There is text in the security considerations section about this but it contains an error: A later paper by Cheon shows that one does not need the exponential memory. Also, we need to provide a reference to Taylor Campbel's comprehensive note on this. It is also worth noting Loup Vaillant observation on communication time (with the OPRF server), lower bounded by speed of light, given that this attack is inherently sequential. Maybe you will summarize these things in the OPRF draft and then we only refer to the fact that in OPAQUE kU is per user so this (anyway infeasible) attack would be directed to enable a dictionary attack against a single user.",
+          "createdAt": "2021-02-01T19:52:32Z",
+          "updatedAt": "2021-02-01T19:52:32Z"
+        }
+      ]
+    },
+    {
+      "number": 132,
+      "id": "MDU6SXNzdWU3OTg1NDc5OTA=",
+      "title": "HKDF-Expand limits",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/132",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "RFC 5869 limits the output length of Expand to 255*HashLen, but the envelope ciphertext has a larger capacity. (In theory, HKDF can produce any number of bytes, but we should abide by the interface limitations.) ",
+      "createdAt": "2021-02-01T17:13:19Z",
+      "updatedAt": "2021-02-02T00:46:20Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Do you have a suggestion for how we should address this? The only way in which our outputs might need to be variable size would be if we support super long key lengths, right? But this doesn't seem like it would happen based on the configurations / ciphersuites we plan to support.\r\n\r\nUnless I am missing something?",
+          "createdAt": "2021-02-02T00:46:20Z",
+          "updatedAt": "2021-02-02T00:46:20Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -7800,26 +7925,42 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTY0NDQ0MTYy",
       "title": "Simplify envelope secret derivation",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/126",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #120.\r\n\r\ncc @hugokraw ",
       "createdAt": "2021-01-30T15:33:26Z",
-      "updatedAt": "2021-01-30T15:33:31Z",
+      "updatedAt": "2021-02-01T14:31:15Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "3451ec3e3e5f6ab3d06247a8d4e7bf1488749c64",
       "headRepository": "cfrg/draft-irtf-cfrg-opaque",
       "headRefName": "caw/simplify-secret-derivation",
       "headRefOid": "00810795fa60f5a5e77cee205d1e698d3b533077",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2021-02-01T14:31:15Z",
+      "mergedAt": "2021-02-01T14:31:15Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "239450c6747e5aed3a3b510d9b33ac7f816534e1"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTc5OTYyMjgx",
+          "commit": {
+            "abbreviatedOid": "0081079"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM!",
+          "createdAt": "2021-02-01T01:18:39Z",
+          "updatedAt": "2021-02-01T01:18:39Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 127,
