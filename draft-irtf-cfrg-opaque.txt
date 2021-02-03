@@ -90,13 +90,14 @@ Table of Contents
      6.1.  Related Analysis
        6.1.1.  Identities
      6.2.  Envelope Encryption
-     6.3.  Configuration Choice
-     6.4.  Static Diffie-Hellman Oracles
-     6.5.  Input Validation
-     6.6.  OPRF Hardening
-     6.7.  User and Server Identities
-     6.8.  User Enumeration
-     6.9.  Password Salt and Storage Implications
+     6.3.  Export Key Usage
+     6.4.  Configuration Choice
+     6.5.  Static Diffie-Hellman Oracles
+     6.6.  Input Validation
+     6.7.  OPRF Hardening
+     6.8.  User and Server Identities
+     6.9.  User Enumeration
+     6.10. Password Salt and Storage Implications
    7.  IANA Considerations
    8.  References
      8.1.  Normative References
@@ -355,7 +356,7 @@ Table of Contents
    Section 3.3 describes details of the functions referenced above.
 
    Both client and server MUST validate the other party's public key
-   before use.  See Section 6.5 for more details.
+   before use.  See Section 6.6 for more details.
 
    Upon completion, S stores U's credentials for later use.  See
    Section 3.3.4 for a recommended storage format.
@@ -609,11 +610,9 @@ Steps:
    authenticated shared secret key.
 
    OPAQUE produces two outputs: a session secret and an export key.  The
-   export key may be used for additional application-specific purposes.
-   For example, one might expand the use of OPAQUE with a credential-
-   retrieval functionality that is separate from the contents of the
-   "Envelope" structure.  The output "export_key" MUST NOT be used in
-   any way before the HMAC value in the envelope is validated.  See
+   export key may be used for additional application-specific purposes,
+   as outlined in Section 6.3.  The output "export_key" MUST NOT be used
+   in any way before the HMAC value in the envelope is validated.  See
    Section 6.2 for more details about this requirement.
 
 4.1.  Credential Retrieval
@@ -1070,7 +1069,16 @@ Steps:
    envelope is validated, i.e., after the HMAC in RecoverCredentials
    passes verification.
 
-6.3.  Configuration Choice
+6.3.  Export Key Usage
+
+   The export key can be used (separately from the OPAQUE protocol) to
+   provide confidentiality and integrity to other data which only the
+   client should be able to process.  For instance, if the server is
+   expected to maintain any client-side secrets which require a password
+   to access, then this export key can be used to encrypt these secrets
+   so that they remain hidden from the server.
+
+6.4.  Configuration Choice
 
    Best practices regarding implementation of cryptographic schemes
    apply to OPAQUE.  Particular care needs to be given to the
@@ -1080,7 +1088,7 @@ Steps:
    [I-D.irtf-cfrg-voprf] have detailed instantiation and implementation
    guidance.
 
-6.4.  Static Diffie-Hellman Oracles
+6.5.  Static Diffie-Hellman Oracles
 
    While one can expect the practical security of the OPRF function
    (namely, the hardness of computing the function without knowing the
@@ -1110,7 +1118,7 @@ Steps:
    twist form allows an attack with 25759 calls that reduces security by
    7 bits and one with 117223 calls that reduces security by 8.4 bits.
 
-6.5.  Input Validation
+6.6.  Input Validation
 
    Both client and server MUST validate the other party's public key(s)
    used for the execution of OPAQUE.  This includes the keys shared
@@ -1127,14 +1135,14 @@ Steps:
    particular, where applicable, endpoints MUST check whether the
    Diffie-Hellman shared secret is the all-zero value and abort if so.
 
-6.6.  OPRF Hardening
+6.7.  OPRF Hardening
 
    Hardening the output of the OPRF greatly increases the cost of an
    offline attack upon the compromise of the password file at the
    server.  Applications SHOULD select parameters that balance cost and
    complexity.
 
-6.7.  User and Server Identities
+6.8.  User and Server Identities
 
    The user identity (client_identity) and server identity
    (server_identity) are optional parameters which are left to the
@@ -1160,7 +1168,7 @@ Steps:
    unspecified (and using client_public_key and server_public_key
    instead) is acceptable.
 
-6.8.  User Enumeration
+6.9.  User Enumeration
 
    User enumeration refers to attacks where the attacker tries to learn
    whether a given user identity is registered with a server.
@@ -1216,7 +1224,7 @@ Steps:
    [[https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/22: Should
    this variant be documented/standardized?]]
 
-6.9.  Password Salt and Storage Implications
+6.10.  Password Salt and Storage Implications
 
    In OPAQUE, the OPRF key acts as the secret salt value that ensures
    the infeasibility of pre-computation attacks.  No extra salt value is
