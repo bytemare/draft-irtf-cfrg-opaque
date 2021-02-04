@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-02-02T00:51:30.280963+00:00",
+  "timestamp": "2021-02-04T00:43:44.467540+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -47,6 +47,11 @@
       "name": "wontfix",
       "description": "This will not be worked on",
       "color": "ffffff"
+    },
+    {
+      "name": "next-version",
+      "description": "Issue to fix in next version",
+      "color": "86E6A4"
     }
   ],
   "issues": [
@@ -1202,15 +1207,17 @@
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "next-version"
+      ],
       "body": "Clients need a way to recover credential information during registration. So we should either (a) fix some Harden parameters, or (b) have servers send these during the registration and authentication flows. \r\n\r\n@kevinlewi, what do you think?",
       "createdAt": "2020-10-21T21:19:22Z",
-      "updatedAt": "2020-10-28T13:03:03Z",
+      "updatedAt": "2021-02-03T20:54:10Z",
       "closedAt": null,
       "comments": [
         {
           "author": "kevinlewi",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Can you clarify what you mean by (a)? If you mean to provide concrete settings, I think we may want to avoid that since these numbers can become out of date, and are application-dependent. For (b), I think we should avoid this as well, unless we start also deciding to send information about group representation / hash functions during these flows. Also, there is no way for the server to enforce that the client follows the harden parameters, and so these are at best recommendations.\r\n\r\nMy approach would be to allow for parameterizing the protocol based on harden parameters. So in the same way that we can have OPAQUE with Ristretto points versus Edwards, or OPAQUE with SHA3 versus Blake3, the choice of a hardened hash function should just be another parameter.",
           "createdAt": "2020-10-21T22:12:30Z",
           "updatedAt": "2020-10-21T22:12:30Z"
@@ -1224,7 +1231,7 @@
         },
         {
           "author": "kevinlewi",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "I might have misinterpreted, but I was not suggesting to modify the current proposal in any way, except to suggest that when producing test vectors, we have a set which instantiates Harden with a specific function.\r\n\r\nSo my proposal is to keep everything in the draft the same, and when presenting test vectors, we provide annotated options such as:\r\n- OPAQUE-X25519-3DH-SHA256-Scrypt10k,\r\n- OPAQUE-Ristretto255-SigmaI-Blake3-Argon2i100k,\r\n- etc.\r\n\r\nThis means that we will be supporting the increased flexibility that you may be against.\r\n\r\nBtw, while we are on the topic, the flexible parameters I am currently tracking are:\r\n- Group representation\r\n- Keypair format\r\n- AKE protocol\r\n- Hash function\r\n- Harden function\r\n\r\n(Also represented in code [here](https://github.com/novifinancial/opaque-ke/blob/master/src/ciphersuite.rs#L15-L23))\r\n\r\nLet me know if you think I am missing any others...",
           "createdAt": "2020-10-21T22:48:43Z",
           "updatedAt": "2020-10-21T22:48:43Z"
@@ -1238,14 +1245,14 @@
         },
         {
           "author": "kevinlewi",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Agreed, I don't think the specification needs to specify the parameters of Harden, but an implementation may want to provide options for configuring them.",
           "createdAt": "2020-10-22T01:15:24Z",
           "updatedAt": "2020-10-22T01:15:24Z"
         },
         {
           "author": "kevinlewi",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "After some offline discussion, we have settled on the following as the main point of discussion:\r\n\r\nLet's suppose a client registers their password using a particular hardening function. How should the client on login know what parameters for the hardening function to use? Two potential options:\r\n1) This shouldn't be part of the OPAQUE protocol, and it should be the responsibility of the wrapping protocol to ensure that the login surface's hardening parameters match those of registration, or to optionally store an annotation at registration time to help inform what parameters to use for login.\r\n2) This should be incorporated into OPAQUE, potentially through an extra client-specified field that can be stored alongside the password file.\r\n\r\nIf we go with Option 2, there are more follow-up questions, such as whether or not this field should be free-form, if it should be authenticated, etc.\r\n\r\ncc: @chris-wood",
           "createdAt": "2020-10-22T02:42:14Z",
           "updatedAt": "2020-10-22T02:42:14Z"
@@ -1630,15 +1637,15 @@
       "id": "MDU6SXNzdWU3MzE0MzgzMjk=",
       "title": "Nail down AKE instantiations",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/77",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "TLS 1.3 *is* the SIGMA-I instantiation, so I think we should drop this from the OPAQUE document. It's redundant, and will likely cause confusion between people who want to choose between one or the other. \r\n\r\ncc @kevinlewi ",
       "createdAt": "2020-10-28T13:24:01Z",
-      "updatedAt": "2020-12-11T19:36:20Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-03T00:38:54Z",
+      "closedAt": "2021-02-03T00:38:54Z",
       "comments": [
         {
           "author": "hugokraw",
@@ -1716,6 +1723,13 @@
           "body": "I saw the message on the list. I don't subscribe, so I'll comment here: a complete OPAQUE-3DH instantiation would be very helpful to me. BTW, the document is getting much easier for me to understand.",
           "createdAt": "2020-12-11T19:36:20Z",
           "updatedAt": "2020-12-11T19:36:20Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Closing as resolved, given #128 and #133. (SIGMA-I and HMQV will move to an appendix. We won't specify wire format specifics or provide test vectors, but we'll sketch how that could be done in future documents.)",
+          "createdAt": "2021-02-03T00:38:54Z",
+          "updatedAt": "2021-02-03T00:38:54Z"
         }
       ]
     },
@@ -1755,16 +1769,24 @@
       "id": "MDU6SXNzdWU3NDAzNjA3NDQ=",
       "title": "Add core OPAQUE protocol test vectors",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/82",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "These would omit the AKE integration pieces, since the wire format for that's still unclear.",
       "createdAt": "2020-11-11T00:49:17Z",
-      "updatedAt": "2020-11-11T00:49:17Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2021-02-03T00:37:33Z",
+      "closedAt": "2021-02-03T00:37:33Z",
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Closing, as we no longer distinguish the \"core\" from the actual AKE.",
+          "createdAt": "2021-02-03T00:37:33Z",
+          "updatedAt": "2021-02-03T00:37:33Z"
+        }
+      ]
     },
     {
       "number": 83,
@@ -1879,7 +1901,7 @@
       "labels": [],
       "body": "in the source there's a commented out part `## Envelope considerations` which mentions that not even `skU` needs to be included in the credentials wrapped in the envelope, instead skU can be derived from `rwd`. there's a note that this part should be \"brought back after updating\". if this is indeed the case, do not forget to change \r\n> Applications MUST include skU in secret_credentials\r\nin the {#protocol-messages} section.",
       "createdAt": "2020-11-16T15:18:02Z",
-      "updatedAt": "2020-12-06T12:45:21Z",
+      "updatedAt": "2021-02-03T22:03:24Z",
       "closedAt": null,
       "comments": [
         {
@@ -1937,6 +1959,27 @@
           "body": "Hello,\r\n\r\ncan't rwdu be used as input to h2c's HashToScalar and serve as a private key? (This is how I understood OPAQUE the first time I read about it - as an alternative to a secret key used for the envelope)",
           "createdAt": "2020-12-06T01:26:05Z",
           "updatedAt": "2020-12-06T12:45:21Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "With the latest advancements here, I'd like to bring this back up.\r\n\r\nConsideration to support RSA in the Sigma setup (or anything other that hasn't defined a secure deterministic key pair generation) made this a blocker.\r\n\r\nSince the 'main' AKE now is 3DH and that the group used for 3DH[ is set to be the same as the one used in the OPRF](https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/104#issuecomment-772114793), we can leverage hashing _rwdu_ to the field for the secret key (e.g. hash-to-scalar() in hash-to-curve terminology). This would nicely lower the complexity and size of the envelope construction.\r\n\r\nI'm thinking about something like this:\r\nRegistration:\r\n```\r\nClient:\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUEXX\")\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. sku = HashToScalar( rwdu, \"Opaque-HashToScalarSku\")\r\n6. pku = sku*Base\r\n7. authKey = HKDF-Expand( rwdu, \"AuthKey\")\r\n8. authTag = Hmac ( authkey, nonce || pku || pks )\r\n9. envU = envelope(nonce, authTag)\r\n\r\nC -> S : pku, envU\r\n```\r\n\r\nThe envelope does not contain encrypted secret material anymore.\r\n\r\nThen during authentication:\r\n```\r\nC -> S : oprf request, AKE request\r\nS -> C : oprf response, AKE response, pks, envU\r\n```\r\n\r\nThe client then does the same steps as during registration and checks the tag. Upon successful verification, uses sku, pku, and pks to proceed with the AKE.",
+          "createdAt": "2021-02-03T19:45:24Z",
+          "updatedAt": "2021-02-03T19:45:24Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "For cases where the AKE does not support deterministic key pair generation based on a seed, we could still use the envelope.",
+          "createdAt": "2021-02-03T19:47:35Z",
+          "updatedAt": "2021-02-03T19:47:35Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "i understand that this would be a 3rd kind of envelope config, besides base and custom-identifier. but i'm still very much in favor of this.",
+          "createdAt": "2021-02-03T22:03:24Z",
+          "updatedAt": "2021-02-03T22:03:24Z"
         }
       ]
     },
@@ -2484,32 +2527,48 @@
       "id": "MDU6SXNzdWU3NzMyOTUxNDE=",
       "title": "Sigma-I signature algorithm specification",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/103",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "bytemare",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Hello,\r\n\r\nSigma uses signatures, for which no algorithm has been specified in the current draft.\r\n\r\nsku/pku can be generated and used independently from the ciphersuite used in the rest of the protocol and stored in the envelope. This would introduce one more parameter, and for Sigma only, if OPAQUE allows for that kind flexibility. From what I understand, the number of parameters is already a concern.\r\n\r\nHow should the Sigma signature algorithm be set or chosen ?",
       "createdAt": "2020-12-22T22:39:11Z",
-      "updatedAt": "2020-12-22T22:39:11Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2021-02-03T20:29:00Z",
+      "closedAt": "2021-02-03T20:29:00Z",
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "We're not specifying a wire format version of SIGMA-I, so this will need to be done in a future draft that specifies SIGMA-I. Thus, I'm closing this for now.",
+          "createdAt": "2021-02-03T20:29:00Z",
+          "updatedAt": "2021-02-03T20:29:00Z"
+        }
+      ]
     },
     {
       "number": 104,
       "id": "MDU6SXNzdWU3NzM3MDYyMTU=",
       "title": "Specify group for AKE",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/104",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "bytemare",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "The current draft does not specify what groups can or should be used for the AKE. I first thought it was the same as for the OPRF.\r\n\r\nShould the group for the AKE be the same as for the OPRF, or is an additional parameter necessary?",
       "createdAt": "2020-12-23T12:03:22Z",
-      "updatedAt": "2020-12-23T12:03:22Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2021-02-03T00:35:30Z",
+      "closedAt": "2021-02-03T00:35:30Z",
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I believe this has been addressed now (it must match the one used for the OPRF). Let's close this",
+          "createdAt": "2021-02-03T00:35:30Z",
+          "updatedAt": "2021-02-03T00:35:30Z"
+        }
+      ]
     },
     {
       "number": 105,
@@ -2539,7 +2598,7 @@
       "labels": [],
       "body": "The 3DH transcript used in the key schedule [currently includes only the nonces and identity](https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html#section-4.2.2.2). This means the contents of info1, info2, and the core OPAQUE messages are not mixed into encryption or MAC keys, which seems less than idea. They are included in the transcript that is covered by the MAC, but I don't see why wouldn't *also* include them in the key schedule. \r\n\r\n@hugokraw, can this be improved?",
       "createdAt": "2021-01-08T03:37:18Z",
-      "updatedAt": "2021-01-08T18:04:45Z",
+      "updatedAt": "2021-02-02T00:56:14Z",
       "closedAt": null,
       "comments": [
         {
@@ -2548,6 +2607,13 @@
           "body": "The protocol is secure as defined. Adding more elements to the key derivation does not hurt, even if not strictly necessary, but omitting elements is insecure. In particular, including the transcript instead of the currently defined info, may not include identities as these may not be appear in the transcript (are idU and idS necessarily transmitted explicitly as part of the transcript?) and identities are needed in the derivation.\r\nYou could just add a transcript element to the key derivation in addition to \"info\". In this case, the derivation of SK could use transcript3 as currently defined, but the derivation of handshake_secret cannot use transcript2. It will need to define a new value transcript2' that stops before Einfo2. \r\nI am not sure the extra complexity is worth given that the simpler derivation suffices here.\r\n\r\nTypo: The elements marked with * in the protocol description to indicate that they are optional appear as _ in the published draft (e.g., info1_)",
           "createdAt": "2021-01-08T18:04:44Z",
           "updatedAt": "2021-01-08T18:04:44Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Can we close this issue? @chris-wood ",
+          "createdAt": "2021-02-02T00:56:14Z",
+          "updatedAt": "2021-02-02T00:56:14Z"
         }
       ]
     },
@@ -2556,15 +2622,15 @@
       "id": "MDU6SXNzdWU3ODE4MjA0NDQ=",
       "title": "Remove optional fields from 3DH",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/109",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "The 3DH instantiation currently allows servers to send plaintext info in the second message, clients to send plaintext info in the third message, and clients to send encrypted info in the third message. This seems like too many options. In particular:\r\n\r\n1. Since there is no cryptographic algorithm negotiation as part of the protocol, the primary benefit of info2 is to avoid server encryption in the second flight. This means that applications need to make a determination about what data is sensitive or not. (Servers already have the encryption keys at this point, so they can send anything they need encrypted and avoid giving applications an option.)\r\n2. Clients have the encryption keys necessary to encrypt application info in the third message. Similar to (1), this means applications must make a choice about what data is sensitive. Removing that choice, by folding info3 into einfo3, simplifies things. \r\n3. Sending application info in the third flight does not make much sense to me in general. If clients need to send info in the third flight, it can be encrypted using keys derived from the output of OPAQUE, i.e., the main traffic secret `SK`, rather than keys derived from `handshake_secret`. I can't think of an example where a client would want to send data in the third flight that MUST be processed before the key confirmation message.\r\n\r\nBased on the above, I think we should do the following: remove `info2`, `info3`, and `einfo3` from the protocol. `info1` and `einfo2` are sufficient for clients and servers to safely exchange application info as a preamble to the traffic secret, and all other info can be sent, encrypted, under a key derived from SK. \r\n\r\n@hugokraw, @kevinlewi, what do you think?",
       "createdAt": "2021-01-08T03:48:00Z",
-      "updatedAt": "2021-01-24T20:17:11Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-03T21:52:52Z",
+      "closedAt": "2021-02-02T00:55:43Z",
       "comments": [
         {
           "author": "kevinlewi",
@@ -2642,6 +2708,20 @@
           "body": "i have not quite understood concrete applications of these fields. however i have a feeling that the `*info*` fields can be related to protocols building upon opaque and can be used to convey protocol specific info, while the application would always use shared secret SK.",
           "createdAt": "2021-01-24T20:17:11Z",
           "updatedAt": "2021-01-24T20:17:11Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@stef The purpose of these fields is to allow for the sending of information that can be authenticated (in the case of info1) and authenticated+encrypted (in the case of info2) **before** the shared secret SK is established.\r\n\r\nI believe this issue may also be closed now that the info fields have been clarified, but please reopen if there is more discussion to be had here.",
+          "createdAt": "2021-02-02T00:55:43Z",
+          "updatedAt": "2021-02-02T00:55:43Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "thanks @kevinlewi i do understand what security properties these fields come with. what i wonder is concrete examples/use-cases how/where these fields are used - specifically what they would contain. one might assume that e.g. the MHF parameters would be such, but iirc that is not a good example. what would be good examples?",
+          "createdAt": "2021-02-03T21:52:52Z",
+          "updatedAt": "2021-02-03T21:52:52Z"
         }
       ]
     },
@@ -2650,15 +2730,15 @@
       "id": "MDU6SXNzdWU3ODMyODI1NTA=",
       "title": "Encryption in the AKE section",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/111",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "What encryption method should we use to encrypt the `einfo2` field of the AKE section?\r\n\r\nI propose that we go with a simple XOR + HKDF based approach. Namely, take the current `Ke2` encryption key, feed it as input to `HKDF-expand`, and xor it with the plaintext to be encrypted. We can obtain the length parameter for HKDF-expand by simply measuring the length of the plaintext (correspondingly, the length of the ciphertext when we need to decrypt).\r\n\r\nThis XOR-based encryption method does not provide integrity, and only works for a single use of the `Ke2` encryption key, but I believe this is OK because `Ke2` only gets used exactly once anyway, and integrity is already provided by the MAC that is computed using `Km2`.\r\n\r\nIn particular, I want to avoid using more heavyweight but traditional algorithms like AES-GCM-256 / ChaCha20-Poly1305 because this increases complexity of the specification.\r\n\r\nThoughts? @hugokraw @chris-wood ",
       "createdAt": "2021-01-11T11:15:35Z",
-      "updatedAt": "2021-01-22T18:12:06Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-02T00:53:23Z",
+      "closedAt": "2021-02-02T00:53:23Z",
       "comments": [
         {
           "author": "hugokraw",
@@ -2701,6 +2781,13 @@
           "body": "> but this may not apply here as this is an informational RFC, I guess\r\n\r\nMy understanding is that we are very much shooting for a concrete RFC for implementations to measure compliance against.\r\n\r\n> Does that mean that 3DH will be used exclusively as the AKE ?\r\n\r\nThat is the current direction that we are going in. @chris-wood posed this question to the mailing list (https://mailarchive.ietf.org/arch/msg/cfrg/N5AsUuSTEBcrfGCgxirPI0xFkps/), as we are also trying to figure out if we should be supporting AKEs other than 3DH here.",
           "createdAt": "2021-01-22T18:12:05Z",
           "updatedAt": "2021-01-22T18:12:05Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Given that we now implement the XOR + HKDF based approach here (https://github.com/cfrg/draft-irtf-cfrg-opaque/blame/master/draft-irtf-cfrg-opaque.md#L1023-L1024), I believe this issue can be closed.\r\n\r\nPlease reopen if this is still unresolved!",
+          "createdAt": "2021-02-02T00:53:23Z",
+          "updatedAt": "2021-02-02T00:53:23Z"
         }
       ]
     },
@@ -2713,10 +2800,12 @@
       "author": "crockeea",
       "authorAssociation": "NONE",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "next-version"
+      ],
       "body": "I read through the draft (https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html on 1/11/21), and have a few comments.\r\n\r\n-\tAdd `pwdU` to section 1.2\r\n-\tAdd OPRF `KeyGen()` to section 2 (referenced in section 3.2.2.2)\r\n-\tThe type of `mode` in the `InnerEnvelope` struct should be `EnvelopeMode`\r\n-\tSection 3.1: The text above the definition of the `Envelope` and `InnerEnvelope` structs says, \u201cThese credentials are embedded into the following structure\u2026\u201d. I therefore expected to see a `SecretCredentials` struct and `CleartextCredentials` struct in either `Envelope` or `InnerEnvelope`. There is a field for \u201cencrypted_creds\u201d, which could correspond to the encryption of the `SecretCredentials`, but there still seems to be no place where `CleartextCredentials` can be embedded into these structs.\r\n-\tBe consistent about the use of parens for functions which output multiple values (see protocol diagrams at top of section 3.2 and at the top of 3.3)\r\n-\tNotation for kU: section 1.2 says \u201ckU refers to U's private OPRF key\u201d. Without any other context, I expect this to be something generated by the user, and known only to the user. But in reality, kU is a per-user key generated by the server, and not revealed to the client. Is there a different way to describe `kU` to avoid this potential confusion?\r\n-\tOPRF blind is referred to as both `blind` and `r`. Make this consistent for clarity.\r\n-\tNeed to define the `Credentials` structure mentioned at the end of section 3.1: fields of this struct are referenced in section 3.2.2.3, but never defined.\r\n-\tSection 3.2.2.3 step 7: uses `len(pt)`, but I\u2019m not sure what `pt` is supposed to be/refer to. Perhaps `secret_creds`?\r\n-\tSection 3.2.2.3 step 11: \u201cCreate InnerEnvelope contents\u201d. I read this as \u201cCreate [an unnamed] InnerEnvelope body\u2026.\u201d, but you apparently intended to name the struct `contents`, since you then refer to it in step 12. If you gave this a non-English-word name, this would be clearer, since there are no typesetting clues.\r\n-\tIs it really necessary to define a variant of `CleartextCredentials`? Why not always use the larger struct? This is only included as AAD; it is not actually transmitted or stored. It\u2019s adding a lot of extra complexity with no apparent benefit. Implementations can always used a short fixed value if they would otherwise want to use the truncated `CleartextCredentials`.\r\n-\tThe type of OPRF group elements isn\u2019t consistent: in section 3.2.1, it\u2019s an (undefined!) type `SerializedElement data`; in section 3.3.1, it\u2019s `opaque data<1..2^16-1>`\r\n-\tSection 3.3.2.3: The \u201cOutputs\u201d list a `SecretCredentials` and an export key, but the diagram shows that RecoverCredentials outputs (skU, pkS, export_key)\r\n-\tSuggestion: incorporate generic AKE messages into the protocol in section 3.3. It would be nice to have a complete diagram of the generic protocol. Currently, you have a partial diagram in section 3.3 and a textual description of the full protocol in the intro of section 4.\r\n-\tSection 4 intro: \u201cHowever, an instantiation where both AKE and data encryption are quantum safe\u2026\u201d Is this encryption referring to the EnvU encryption defined in section 3.2.2.3? If so, isn\u2019t the encryption already quantum safe? If that\u2019s the case, I\u2019d change this to \u201cHowever, an instantiation where AKE is quantum safe\u2026\u201d to avoid confusion.\r\n-\tSection 4.1: struct `HkdfLabel` contains the field opaque label<8..255> = \"OPAQUE \" + Label; Is `Label` required to be non-null, or is the string required to be null-terminated? The string \u201cOPAQUE \u201c has length 7, so I\u2019m wondering why the minimum field size is 8. (I see that this is consistent with TLS1.3, but I don\u2019t see an explanation there either.)\r\n-\tSection 4.2.1: This section defines, e.g., ` KE1 = credential_request, nonceU, info1*, epkU`, so that KE1 contains the credential_request. However, at the top of section 4, the high-level protocol shows credential_request being sent in addition to KE1. This is another reason it would be helpful to have a complete diagram of the generic protocol (with, e.g., a generic 3-message AKE). For this particular issue, I think KE1 should only include AKE message components; it should not include the credential_request. Similarly for KE2 and section 4.3.1.\r\n-\tSection 5: \u201cFuture specifications \u2026 MAY introduce other AKE instantiations.\u201d Also allow for/mention the possibility of defining alternate OPRFs. For example, https://eprint.iacr.org/2020/1532 gives a lattice-based (and hence PQ) OPRF.\r\n-\tSection 6.6: What does \u201cskipping the key exchange part\u201d mean? Does it mean somehow truncating the protocol/skipping the AKE entirely? Or does it mean not using the exchanged key after a successful authentication? In general, I\u2019m not sure what I would have to do to violate this section, which means I could easily violate it without knowing.\r\n",
       "createdAt": "2021-01-11T22:58:23Z",
-      "updatedAt": "2021-01-26T03:00:06Z",
+      "updatedAt": "2021-02-03T20:54:10Z",
       "closedAt": null,
       "comments": [
         {
@@ -2833,15 +2922,15 @@
       "id": "MDU6SXNzdWU3OTEzNDUwNDQ=",
       "title": "Test vectors and naming",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/119",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I'd like to reach an agreement on the names of variables we use for OPAQUE, which also impact the parameters to each of the test vectors we release. Here is what I have so far (open to feedback!):\r\n\r\nInputs:\r\n\r\n```\r\n    pk_u: Client's static public key\r\n    sk_u: Client's static private key\r\n    epk_u: Client's ephemeral public key\r\n    esk_u: Client's ephemeral private key\r\n    pk_s: Server's static public key\r\n    sk_s: Server's static private key\r\n    epk_s: Server's ephemeral public key\r\n    esk_s: Server's ephemeral private key\r\n    password: Client's password\r\n    id_u: idU\r\n    id_s: idS\r\n    blind_registration: Scalar used to blind client's password during registration\r\n    blind_login: Scalar used to blind client's password during login\r\n    oprf_key: kU, the server's secret key for the OPRF\r\n    envelope_nonce: nonce used for envelope\r\n    client_nonce: nonce from client used in AKE\r\n    server_nonce: nonce from server used in AKE\r\n    info1: Plaintext info field populated by client in first AKE message\r\n    info2: Encrypted info field populated by server in second AKE message\r\n```\r\n\r\nOutputs:\r\n\r\n```\r\n    registration_request: First message of registration\r\n    registration_response: Second message of registration\r\n    registration_upload: Third message of registration\r\n    credential_request: First message of login\r\n    credential_response: Second message of login\r\n    credential_finalization: Third message of login\r\n    credential_file: The object stored by the server after registration has completed\r\n    export_key: The export_key parameter output by registration and login's final step on the client\r\n    session_key: The output of the client and server after the AKE\r\n```\r\n\r\nThere is also an opportunity to publish \"intermediate values\" here, such as the envelope bytes, the \"rwdU\" value, etc. They are not included here at the moment, but we could add additional values to represent them as well, if desired.",
       "createdAt": "2021-01-21T17:16:39Z",
-      "updatedAt": "2021-01-27T22:38:07Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-03T21:56:16Z",
+      "closedAt": "2021-02-03T00:32:02Z",
       "comments": [
         {
           "author": "bytemare",
@@ -2919,6 +3008,20 @@
           "body": "i don't see the reason why not use exactly the same identifiers as in the spec, but i guess it's good enough.",
           "createdAt": "2021-01-27T22:38:07Z",
           "updatedAt": "2021-01-27T22:38:07Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Some proposed changes from @chris-wood:\r\n- Remove the `credential_file` parameter entirely from the outputs.\r\n- Follow the rest of the draft with variable names and abandon things like `pk_u` in favor of `pkU`, `registration_request` -> `RegistrationRequest`, `oprf_key` -> `kU`\r\n\r\nLet me know if there are any other suggestions, and I'll be happy to edit the top-level post \r\n",
+          "createdAt": "2021-02-02T20:47:04Z",
+          "updatedAt": "2021-02-02T20:47:04Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "thanks a lot!",
+          "createdAt": "2021-02-03T21:56:16Z",
+          "updatedAt": "2021-02-03T21:56:16Z"
         }
       ]
     },
@@ -2934,7 +3037,7 @@
       "labels": [],
       "body": "Here are a subset of the steps for envelope construction:\r\n\r\n```\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUE01\")\r\n3. rwdU = HKDF-Extract(\"rwdU\", Harden(y, params))\r\n4. Create SecretCredentials secret_creds with creds.skU\r\n5. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n6. nonce = random(32)\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, concat(nonce, \"Pad\"), len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, concat(nonce, \"AuthKey\"), Nh)\r\n9. export_key = HKDF-Expand(rwdU, concat(nonce, \"ExportKey\"), Nh)\r\n...\r\n```\r\n\r\nCan we instead change this to:\r\n```\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. Create SecretCredentials secret_creds with creds.skU\r\n6. Create CleartextCredentials cleartext_creds with response.pkS\r\n   and custom identifiers creds.idU and creds.idS if mode is customIdentifier\r\n7. pseudorandom_pad = HKDF-Expand(rwdU, \"Pad\", len(pt))\r\n8. auth_key = HKDF-Expand(rwdU, \"AuthKey\", Nh)\r\n9. export_key = HKDF-Expand(rwdU, \"ExportKey\", Nh)\r\n```\r\n?\r\n\r\nAdditionally, we could consider bundling up steps 7-9 into a single HKDF-Expand call, and taking slices of that output for each of the individual variables.",
       "createdAt": "2021-01-21T21:30:46Z",
-      "updatedAt": "2021-02-01T14:31:15Z",
+      "updatedAt": "2021-02-02T19:52:20Z",
       "closedAt": "2021-02-01T14:31:15Z",
       "comments": [
         {
@@ -3027,6 +3130,20 @@
           "body": "> Lastly, there was a comment in this thread about the nonce helping in the case of different users using the same password and same kU by the server. A server should never use the same kU with two different users. We may want to add such remark in the security considerations and also around the place where we specify the choice of kU.\r\n\r\nGood idea -- I'll make a note of this and address it in a future change.",
           "createdAt": "2021-02-01T13:36:33Z",
           "updatedAt": "2021-02-01T13:36:33Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "> as long as Nonce is chosen anew each time a password is registered (or re-registered)\r\n\r\nThis should be specified as well. Servers must ensure that the client doesn't reuse nonces. In practice, this means the server must retain these nonce (or a fingerprint) and validate new ones on each (re)-registration.",
+          "createdAt": "2021-02-02T15:31:05Z",
+          "updatedAt": "2021-02-02T16:56:37Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This needs to be specified but enforcement does not need to go all the way as you suggest. As long as the server chooses random independent keys for different users, the nonce in the envelope is of limited consequences (you only need it for the case where the user re-registers, does not change the password but chooses a new secret keys skU and the server does not change the user's OPRF key; and even then the damage of repeating or omitting the nonce is not very significant)",
+          "createdAt": "2021-02-02T19:52:19Z",
+          "updatedAt": "2021-02-02T19:52:19Z"
         }
       ]
     },
@@ -3086,10 +3203,12 @@
       "author": "stef",
       "authorAssociation": "NONE",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "next-version"
+      ],
       "body": "> 2OSP and OS2IP: Convert a byte string to and from a non-negative integer as described in {{?RFC8017}}.\r\n\r\nlink to https://tools.ietf.org/html/rfc8017#section-4.1 and https://tools.ietf.org/html/rfc8017#section-4.2\r\n\r\nperhaps also note that this is also known as the htons/ntohs functions in POSIX - implementors might find this very helpful!\r\n\r\n------- \r\n\r\n> kX: An OPRF private key used in role X. For example, kU refers to U's private OPRF key.\r\n\r\nis there any other role besides kU?\r\n\r\n------- \r\n\r\n> random(n): Generate a random byte string of length n bytes.\r\n\r\nnote that this random string should be of cryptographic quality. although there is a note under all the definitions saying so, it's better to have it closer where it matters and less ignored.\r\n\r\n\r\n------- \r\n\r\nin #cryptographic-protocol-and-algorithm-dependencies-dependencies\r\n\r\nthe note that only the base variant of the OPRF is needed is also a bit far away from where the OPRF dependency is specified.\r\n\r\n------- \r\n\r\n> auth_tag : Authentication tag protecting the contents of the envelope, covering InnerEnvelope and CleartextCredentials\r\n\r\nthen it notes:\r\n> The full procedure for constructing Envelope and InnerEnvelope from SecretCredentials and CleartextCredentials is described in {{finalize-request}}.\r\n\r\nwhich is:\r\n\r\n> 12. auth_tag = HMAC(auth_key, concat(contents, cleartext_creds))\r\n\r\nit's all there but quite dispersed spatially, someone trying to implement this has to jump around in the doc, it's very hard to read this spec sequentially.\r\n\r\n------- \r\n\r\n> Credential information corresponding to the configuration-specific mode, along with the user public key pkU and private key skU, are stored in a Credentials object with the following named fields:\r\n> skU, pkU, idU, idS\r\n\r\nit is not necessary to specify for interoperability how an implementation stores these values. also for security i think it is better to handle skU seperatately from the other values - or maybe not, depending on the configuration, if any of the other values is also to be kept secret. a sensible implementation wants to actually protect the sensitive values differently from the public values. maybe by storing them in mprotected/sanitized-after-use storage, in secure elements, or something else.\r\n\r\ni do see how it is a shortcut to list all the necessary items from the creds struture as an input to finalizerequest though.\r\n\r\n> Clients MUST NOT use the same key pair (skU, pkU) for two different accounts.\r\n\r\nwhy is this, when the server can use the same keypair for different accounts? in the case when idU == pkU this is not even possible i guess.\r\n\r\n------\r\n\r\n> pkS : An encoded public key that will be used for the online authenticated key exchange stage.\r\n\r\nadd explicitly that this is the *servers* pubkey\r\n\r\nsimilarly be explicit also about this:\r\n\r\n> pkU : An encoded public key, corresponding to the private key skU.\r\n\r\n-------\r\n\r\n#credential-file\r\n\r\nwe agree these things need to be persisted, however i do not see how this helps interoperability or security specifying this struct. i propose to change the wording to something like:\r\n\r\nthe server needs to be able to reproduce the following values for the online phase.\r\n\r\nan implementation might choose to generate kU by doing a KDF on some global secret value in combination with idU for example, then this storage of kU can be skipped. again we should realize that kU is a sensitive value which needs protection (like sanitization, possibly also at-rest encryption, not being swapped to disk, stored in a secure element, etc) while envU is an encrypted blob that does not need these kind of protections. in case pkU == idU it might be possbile that envU is stored in a hashdictionary that is indexed by idU, and thus pkU does not need to be stored at all. lumping these values together and requiring them to be stored in this structure creates unnecessary limitations on implementations. while this specification might harm security, it does not really improve interoperability.\r\n\r\neither delete this section, or make this optional, and put it into an non-binding appendix.\r\n\r\nanother thing against this, is the usage of export-keys, in case an implementation chooses to encrypt data with an export-key but wants to stay stateless on the client, then the export-key encrypted data might also be stored on the server.\r\n",
       "createdAt": "2021-01-24T20:01:04Z",
-      "updatedAt": "2021-01-24T20:01:04Z",
+      "updatedAt": "2021-02-03T20:54:11Z",
       "closedAt": null,
       "comments": []
     },
@@ -3102,10 +3221,12 @@
       "author": "hugokraw",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "next-version"
+      ],
       "body": "I want the HMQV and SIGMA specification to appear in an appendix. It serves as illustration and guidance for these and other instantiations.  Note that there is text referring to these protocols (e.g., introduction) that needs to be updated.",
       "createdAt": "2021-02-01T03:41:32Z",
-      "updatedAt": "2021-02-01T03:44:55Z",
+      "updatedAt": "2021-02-03T20:54:11Z",
       "closedAt": null,
       "comments": []
     },
@@ -3114,31 +3235,48 @@
       "id": "MDU6SXNzdWU3OTg0NDUxMjI=",
       "title": "Clarify OPRF mode",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/129",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "OPAQUE only requires the OPRF \"base\" mode, which does not have evaluation verification.",
       "createdAt": "2021-02-01T15:14:46Z",
-      "updatedAt": "2021-02-01T15:14:46Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2021-02-03T00:40:47Z",
+      "closedAt": "2021-02-03T00:40:46Z",
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Isn't this already addressed here, at the top of the \"Configurations\" section:\r\n\r\n> An OPAQUE configuration is a tuple (OPRF, Hash, MHF, EnvelopeMode). The OPAQUE OPRF protocol is drawn from the \"base mode\" variant of {{I-D.irtf-cfrg-voprf}}",
+          "createdAt": "2021-02-03T00:39:35Z",
+          "updatedAt": "2021-02-03T00:39:35Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Closing after agreement offline with @chris-wood ",
+          "createdAt": "2021-02-03T00:40:46Z",
+          "updatedAt": "2021-02-03T00:40:46Z"
+        }
+      ]
     },
     {
       "number": 130,
       "id": "MDU6SXNzdWU3OTg0NTEyMTA=",
       "title": "Elaborate on export_key usage",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/130",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "kevinlewi"
+      ],
       "labels": [],
       "body": "Applications can use export_key in a variety of ways (after OPAQUE completes successfully). The draft should describe some of these in more detail, perhaps in an appendix to keep the main body of text slim.\r\n\r\ncc @rot256",
       "createdAt": "2021-02-01T15:21:00Z",
-      "updatedAt": "2021-02-02T00:49:34Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-03T20:16:23Z",
+      "closedAt": "2021-02-03T20:16:23Z",
       "comments": [
         {
           "author": "kevinlewi",
@@ -3146,6 +3284,13 @@
           "body": "Here is one sample text that we could add to the appendix:\r\n\r\n> The export key can be used (separately from the OPAQUE protocol) to provide confidentiality and integrity to other data which only the client should be able to process. For instance, if the server is expected to maintain any client-side secrets which require a password to access, then this export key can be used to encrypt these secrets so that they remain hidden from the server.\r\n\r\nThis only describes one application, but it is the main application that comes to mind for me.",
           "createdAt": "2021-02-02T00:49:34Z",
           "updatedAt": "2021-02-02T00:49:34Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@kevinlewi, could you please throw this up in a PR? I think the proposed text is just right.",
+          "createdAt": "2021-02-02T01:10:27Z",
+          "updatedAt": "2021-02-02T01:10:34Z"
         }
       ]
     },
@@ -3158,10 +3303,12 @@
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "next-version"
+      ],
       "body": "We should ensure that we acknowledge this type of attack in theory, and describe how OPAQUE deals with it. In particular, since each OPRF key is per-user, which means that any reduction in security is per-user, which is unlikely to be a problem in practice.",
       "createdAt": "2021-02-01T15:39:48Z",
-      "updatedAt": "2021-02-01T19:52:32Z",
+      "updatedAt": "2021-02-03T20:54:11Z",
       "closedAt": null,
       "comments": [
         {
@@ -3181,11 +3328,13 @@
       "state": "OPEN",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "kevinlewi"
+      ],
       "labels": [],
       "body": "RFC 5869 limits the output length of Expand to 255*HashLen, but the envelope ciphertext has a larger capacity. (In theory, HKDF can produce any number of bytes, but we should abide by the interface limitations.) ",
       "createdAt": "2021-02-01T17:13:19Z",
-      "updatedAt": "2021-02-02T00:46:20Z",
+      "updatedAt": "2021-02-03T19:32:09Z",
       "closedAt": null,
       "comments": [
         {
@@ -3194,8 +3343,68 @@
           "body": "Do you have a suggestion for how we should address this? The only way in which our outputs might need to be variable size would be if we support super long key lengths, right? But this doesn't seem like it would happen based on the configurations / ciphersuites we plan to support.\r\n\r\nUnless I am missing something?",
           "createdAt": "2021-02-02T00:46:20Z",
           "updatedAt": "2021-02-02T00:46:20Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "After some offline discussion: in order to address this, we will limit all opaque key types to be at most 255 bytes instead of 2^16-1.",
+          "createdAt": "2021-02-03T02:07:28Z",
+          "updatedAt": "2021-02-03T02:07:28Z"
+        },
+        {
+          "author": "rot256",
+          "authorAssociation": "NONE",
+          "body": "That is not enough for a 2048-bit RSA key.\r\n\r\n> Each public and private key value is an opaque byte string, specific\r\n> to the AKE protocol in which OPAQUE is instantiated.  For example, if\r\n> used as raw public keys for TLS 1.3 [RFC8446], they may be RSA or\r\n> ECDSA keys as per [RFC7250]\r\n\r\nDoes this mean that the spec bans the use of RSA?",
+          "createdAt": "2021-02-03T18:41:09Z",
+          "updatedAt": "2021-02-03T18:41:09Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> That is not enough for a 2048-bit RSA key.\r\n\r\nThis is an interesting point, but as I see it, one could just seed a PRNG with the secret bytes in the envelope. (This is related to #84.) Of course, I Am Not A Cryptographer, so perhaps this is bad practice? \ud83e\udd37 ",
+          "createdAt": "2021-02-03T19:01:13Z",
+          "updatedAt": "2021-02-03T19:01:13Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Deterministic generation of RSA keys is non-standard, and the tricks and hacks to make it work are quite \"roll your own\".",
+          "createdAt": "2021-02-03T19:07:39Z",
+          "updatedAt": "2021-02-03T19:07:39Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@chris-wood : I think the current direction we are taking is to not support RSA keys, which means that the text that @rot256 linked to should be removed. Thoughts?\r\n\r\nThe group representations we *are* supporting are listed out in the Configurations section (https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/draft-irtf-cfrg-opaque.md#configurations-configurations) and those should all fit within the 255-byte limit.\r\n\r\nEdit: Additionally, In response to:\r\n\r\n> one could just seed a PRNG with the secret bytes in the envelope\r\n\r\nI am not so much a fan of allowing for flexibility in what goes in the secret bytes in the envelope, and hence I do not see a need for considering this. In my opinion, applications that wish to use the secrecy provided by OPAQUE can do so with the export_key parameter.",
+          "createdAt": "2021-02-03T19:23:54Z",
+          "updatedAt": "2021-02-03T19:26:14Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> @chris-wood : I think the current direction we are taking is to not support RSA keys, which means that the text that @rot256 linked to should be removed. Thoughts?\r\n\r\nYep, I think that's right. RSA is incompatible with 3DH anyway. For the SIGMA-I variant, we would need to make it clear that the envelope structure or its encryption mechanism would need to change. (Given that we don't have a use case for SIGMA-I right now, I think I'm fine with this outcome.)\r\n\r\n@hugokraw, one consequence of the change proposed in this issue is that it would limit OPAQUE-EA instantiations to non-RSA keys. I quite like this as a forcing function away from RSA, though I'm curious to hear your thoughts. \r\n\r\n> I am not so much a fan of allowing for flexibility in what goes in the secret bytes in the envelope, and hence I do not see a need for considering this. In my opinion, applications that wish to use the secrecy provided by OPAQUE can do so with the export_key parameter.\r\n\r\nI wasn't envisioning this being a flexible thing. I was suggesting that, rather than the envelope store the raw private key, it store a seed used to deterministically derive the key. In any case, that's a separate change if we are to make it, likely as part of #84.",
+          "createdAt": "2021-02-03T19:30:35Z",
+          "updatedAt": "2021-02-03T19:32:09Z"
         }
       ]
+    },
+    {
+      "number": 134,
+      "id": "MDU6SXNzdWU3OTk4NDUxMTM=",
+      "title": "Rename all instances of \"user\" and \"U\" to \"client\" and \"C\"",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/134",
+      "state": "CLOSED",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [
+        "kevinlewi"
+      ],
+      "labels": [],
+      "body": "Per discussion with @chris-wood \r\n\r\nOpen to feedback / objections for this!",
+      "createdAt": "2021-02-03T00:38:07Z",
+      "updatedAt": "2021-02-03T20:27:18Z",
+      "closedAt": "2021-02-03T20:27:18Z",
+      "comments": []
     }
   ],
   "pulls": [
@@ -8008,6 +8217,231 @@
           "updatedAt": "2021-01-30T21:20:12Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 133,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY2MjA0ODcy",
+      "title": "First test vectors",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/133",
+      "state": "MERGED",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #119.",
+      "createdAt": "2021-02-02T19:02:55Z",
+      "updatedAt": "2021-02-03T21:55:16Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "239450c6747e5aed3a3b510d9b33ac7f816534e1",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/format-vectors",
+      "headRefOid": "7402eb5441d45028adce29c8a3a41680411f078b",
+      "closedAt": "2021-02-03T00:32:03Z",
+      "mergedAt": "2021-02-03T00:32:02Z",
+      "mergedBy": "kevinlewi",
+      "mergeCommit": {
+        "oid": "ea3739c54c9c580f12ade6811d5e5ea414ccc549"
+      },
+      "comments": [
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "> They match!\r\n\r\ncongrats @kevinlewi  :)\r\n",
+          "createdAt": "2021-02-03T21:55:16Z",
+          "updatedAt": "2021-02-03T21:55:16Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTgxNzU2NzQ0",
+          "commit": {
+            "abbreviatedOid": "46e2424"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "- [x] Let's move any discussion of variable name changes and designation of inputs/outputs to #119, so that once we agree on a setting, this PR can just implement whatever is decided in #119\r\n\r\n- [x] credential_request / KE1, credential_response / KE2, and credential_finalization / KE3 messages are missing\r\n\r\n- [ ] Add a glossary for some of the variable names that do not appear anywhere in the spec (for example, envelope_nonce)",
+          "createdAt": "2021-02-02T20:44:45Z",
+          "updatedAt": "2021-02-03T00:00:52Z",
+          "comments": []
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTgxODg5NjAz",
+          "commit": {
+            "abbreviatedOid": "7402eb5"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "They match!",
+          "createdAt": "2021-02-03T00:29:38Z",
+          "updatedAt": "2021-02-03T00:29:38Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 135,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY3MTE0MTA5",
+      "title": "Adding text on export key usage",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/135",
+      "state": "MERGED",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "See discussion in #130 \r\n\r\nCloses #130 ",
+      "createdAt": "2021-02-03T20:13:01Z",
+      "updatedAt": "2021-02-03T20:16:23Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "ea3739c54c9c580f12ade6811d5e5ea414ccc549",
+      "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
+      "headRefName": "export_key_usage",
+      "headRefOid": "2286ceaa269e47551febe2b3b9bd875759019d06",
+      "closedAt": "2021-02-03T20:16:23Z",
+      "mergedAt": "2021-02-03T20:16:23Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "2d6462b358c97b192b2030eadf55dab6da4fbac9"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTgyNzYzODEy",
+          "commit": {
+            "abbreviatedOid": "2286cea"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-02-03T20:16:17Z",
+          "updatedAt": "2021-02-03T20:16:17Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 136,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY3MTIxMjM3",
+      "title": "Renaming \"user\" to \"client\"",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/136",
+      "state": "MERGED",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #134 ",
+      "createdAt": "2021-02-03T20:25:18Z",
+      "updatedAt": "2021-02-03T20:27:18Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "2d6462b358c97b192b2030eadf55dab6da4fbac9",
+      "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
+      "headRefName": "user_to_client",
+      "headRefOid": "f1d16cdc593833d188daad7606abc99c5316cd60",
+      "closedAt": "2021-02-03T20:27:18Z",
+      "mergedAt": "2021-02-03T20:27:18Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "111b02c884ca967d6c78182dae08f7d83d4be7ae"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTgyNzcxOTgy",
+          "commit": {
+            "abbreviatedOid": "f1d16cd"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-02-03T20:27:14Z",
+          "updatedAt": "2021-02-03T20:27:14Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 137,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY3MTIzMzg4",
+      "title": "Limiting opaque key types to 255 bytes",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/137",
+      "state": "OPEN",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Changes all opaque key types to be at most 255 bytes (instead of 2^16-1). Also changed encrypted_creds in the envelope to have the same restriction.\r\n\r\nNote: Still need to update the test vectors to match this new change.\r\n\r\nCloses #132 ",
+      "createdAt": "2021-02-03T20:29:15Z",
+      "updatedAt": "2021-02-03T20:30:17Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "111b02c884ca967d6c78182dae08f7d83d4be7ae",
+      "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
+      "headRefName": "hkdf_limits",
+      "headRefOid": "21e9d8b937f298d7693dfdf62342d19102f94a64",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 138,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY3MjQyMDU5",
+      "title": "Add back alternate AKE sketches",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/138",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Also, nail down the MHF parameters. We don't currently allow them to be negotiated *in* the protocol. (The wrapper protocol may choose to allow negotiation, but that negotiation would yield a different configuration.)\r\n\r\nCloses #128 and #69.\r\n\r\ncc @hugokraw ",
+      "createdAt": "2021-02-04T00:20:58Z",
+      "updatedAt": "2021-02-04T00:20:59Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "111b02c884ca967d6c78182dae08f7d83d4be7ae",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/add-alternates",
+      "headRefOid": "6cf7edada315c54f23001d690e86b24c1aa23e47",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 139,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTY3MjQ0NTc1",
+      "title": "Match identifiers with main document.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/139",
+      "state": "OPEN",
+      "author": "armfazh",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "```txt\r\nenum {\r\n  base(1),\r\n  custom_identifier(2),\r\n  (255)\r\n} EnvelopeMode;\r\n```",
+      "createdAt": "2021-02-04T00:27:44Z",
+      "updatedAt": "2021-02-04T00:27:44Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "111b02c884ca967d6c78182dae08f7d83d4be7ae",
+      "headRepository": "armfazh/draft-irtf-cfrg-opaque",
+      "headRefName": "patch-1",
+      "headRefOid": "d4402cb2754ef734043f24dc088beaab11135404",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
