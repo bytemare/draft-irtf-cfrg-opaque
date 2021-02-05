@@ -87,16 +87,14 @@ Table of Contents
    5.  Configurations
    6.  Security Considerations
      6.1.  Related Analysis
-       6.1.1.  Identities
-     6.2.  Envelope Encryption
-     6.3.  Export Key Usage
-     6.4.  Configuration Choice
+     6.2.  Identities
+     6.3.  Envelope Encryption
+     6.4.  Export Key Usage
      6.5.  Static Diffie-Hellman Oracles
      6.6.  Input Validation
      6.7.  OPRF Hardening
-     6.8.  Client and Server Identities
-     6.9.  Client Enumeration
-     6.10. Password Salt and Storage Implications
+     6.8.  Client Enumeration
+     6.9.  Password Salt and Storage Implications
    7.  IANA Considerations
    8.  References
      8.1.  Normative References
@@ -380,7 +378,7 @@ Table of Contents
       specific value, e.g., an e-mail address or normal account name.
 
    *  server_identity: The server identity.  This is typically a domain
-      name, e.g., example.com.  See Section 6.1.1 for information about
+      name, e.g., example.com.  See Section 6.2 for information about
       this identity.
 
    Each public and private key value is an opaque byte string, specific
@@ -613,9 +611,9 @@ Steps:
 
    OPAQUE produces two outputs: a session secret and an export key.  The
    export key may be used for additional application-specific purposes,
-   as outlined in Section 6.3.  The output "export_key" MUST NOT be used
+   as outlined in Section 6.4.  The output "export_key" MUST NOT be used
    in any way before the HMAC value in the envelope is validated.  See
-   Section 6.2 for more details about this requirement.
+   Section 6.3 for more details about this requirement.
 
 4.1.  Credential Retrieval
 
@@ -880,8 +878,8 @@ Steps:
                     || I2OSP(len(client_identity), 2) || client_identity
                     || I2OSP(len(server_identity), 2) || server_identity
 
-   See Section 6.1.1 for more information about identities
-   client_identity and server_identity.
+   See Section 6.2 for more information about identities client_identity
+   and server_identity.
 
    Let "epkS" and "eskS" be "server_keyshare" and the corresponding
    secret key, and "epkU" and "eskU" be "client_keyshare" and the
@@ -1011,7 +1009,7 @@ Steps:
    computation attacks or presented a proof of aPAKE security (not even
    in a weak model).
 
-6.1.1.  Identities
+6.2.  Identities
 
    AKE protocols generate keys that need to be uniquely and verifiably
    bound to a pair of identities.  In the case of OPAQUE, those
@@ -1033,7 +1031,31 @@ Steps:
    server and the client must always be those defined at time of
    password registration.
 
-6.2.  Envelope Encryption
+   The client identity (client_identity) and server identity
+   (server_identity) are optional parameters which are left to the
+   application to designate as monikers for the client and server.  If
+   the application layer does not supply values for these parameters,
+   then they will be omitted from the creation of the envelope during
+   the registration stage.  Furthermore, they will be substituted with
+   client_identity = client_public_key and server_identity =
+   server_public_key during the authenticated key exchange stage.
+
+   The advantage to supplying a custom client_identity and
+   server_identity (instead of simply relying on a fallback to
+   client_public_key and server_public_key) is that the client can then
+   ensure that any mappings between client_identity and
+   client_public_key (and server_identity and server_public_key) are
+   protected by the authentication from the envelope.  Then, the client
+   can verify that the client_identity and server_identity contained in
+   its envelope matches the client_identity and server_identity supplied
+   by the server.
+
+   However, if this extra layer of verification is unnecessary for the
+   application, then simply leaving client_identity and server_identity
+   unspecified (and using client_public_key and server_public_key
+   instead) is acceptable.
+
+6.3.  Envelope Encryption
 
    The analysis of OPAQUE from [OPAQUE] requires the authenticated
    encryption scheme used to produce envelope to have a special property
@@ -1048,7 +1070,7 @@ Steps:
    envelope is validated, i.e., after the HMAC in RecoverCredentials
    passes verification.
 
-6.3.  Export Key Usage
+6.4.  Export Key Usage
 
    The export key can be used (separately from the OPAQUE protocol) to
    provide confidentiality and integrity to other data which only the
@@ -1056,16 +1078,6 @@ Steps:
    expected to maintain any client-side secrets which require a password
    to access, then this export key can be used to encrypt these secrets
    so that they remain hidden from the server.
-
-6.4.  Configuration Choice
-
-   Best practices regarding implementation of cryptographic schemes
-   apply to OPAQUE.  Particular care needs to be given to the
-   implementation of the OPRF regarding testing group membership and
-   avoiding timing and other side channel leakage in the hash-to-curve
-   mapping.  Drafts [I-D.irtf-cfrg-hash-to-curve] and
-   [I-D.irtf-cfrg-voprf] have detailed instantiation and implementation
-   guidance.
 
 6.5.  Static Diffie-Hellman Oracles
 
@@ -1109,10 +1121,7 @@ Steps:
    [keyagreement].  This includes checking that the coordinates are in
    the correct range, that the point is on the curve, and that the point
    is not the point at infinity.  Additionally, validation MUST ensure
-   the Diffie-Hellman shared secret is not the point at infinity.  For
-   X25519 and X448, validation is as described in [RFC7748].  In
-   particular, where applicable, endpoints MUST check whether the
-   Diffie-Hellman shared secret is the all-zero value and abort if so.
+   the Diffie-Hellman shared secret is not the point at infinity.
 
 6.7.  OPRF Hardening
 
@@ -1121,33 +1130,7 @@ Steps:
    server.  Applications SHOULD select parameters that balance cost and
    complexity.
 
-6.8.  Client and Server Identities
-
-   The client identity (client_identity) and server identity
-   (server_identity) are optional parameters which are left to the
-   application to designate as monikers for the client and server.  If
-   the application layer does not supply values for these parameters,
-   then they will be omitted from the creation of the envelope during
-   the registration stage.  Furthermore, they will be substituted with
-   client_identity = client_public_key and server_identity =
-   server_public_key during the authenticated key exchange stage.
-
-   The advantage to supplying a custom client_identity and
-   server_identity (instead of simply relying on a fallback to
-   client_public_key and server_public_key) is that the client can then
-   ensure that any mappings between client_identity and
-   client_public_key (and server_identity and server_public_key) are
-   protected by the authentication from the envelope.  Then, the client
-   can verify that the client_identity and server_identity contained in
-   its envelope matches the client_identity and server_identity supplied
-   by the server.
-
-   However, if this extra layer of verification is unnecessary for the
-   application, then simply leaving client_identity and server_identity
-   unspecified (and using client_public_key and server_public_key
-   instead) is acceptable.
-
-6.9.  Client Enumeration
+6.8.  Client Enumeration
 
    Client enumeration refers to attacks where the attacker tries to
    learn whether a given client identity is registered with a server.
@@ -1204,7 +1187,7 @@ Steps:
    [[https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/22: Should
    this variant be documented/standardized?]]
 
-6.10.  Password Salt and Storage Implications
+6.9.  Password Salt and Storage Implications
 
    In OPAQUE, the OPRF key acts as the secret salt value that ensures
    the infeasibility of pre-computation attacks.  No extra salt value is
@@ -1346,10 +1329,6 @@ Steps:
               Transport Layer Security (TLS) and Datagram Transport
               Layer Security (DTLS)", RFC 7250, DOI 10.17487/RFC7250,
               June 2014, <https://www.rfc-editor.org/info/rfc7250>.
-
-   [RFC7748]  Langley, A., Hamburg, M., and S. Turner, "Elliptic Curves
-              for Security", RFC 7748, DOI 10.17487/RFC7748, January
-              2016, <https://www.rfc-editor.org/info/rfc7748>.
 
    [RFC7914]  Percival, C. and S. Josefsson, "The scrypt Password-Based
               Key Derivation Function", RFC 7914, DOI 10.17487/RFC7914,
