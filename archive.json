@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-02-07T00:45:54.813893+00:00",
+  "timestamp": "2021-02-11T00:44:56.837015+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -1214,7 +1214,7 @@
       ],
       "body": "Clients need a way to recover credential information during registration. So we should either (a) fix some Harden parameters, or (b) have servers send these during the registration and authentication flows. \r\n\r\n@kevinlewi, what do you think?",
       "createdAt": "2020-10-21T21:19:22Z",
-      "updatedAt": "2021-02-07T00:22:03Z",
+      "updatedAt": "2021-02-07T22:10:09Z",
       "closedAt": "2021-02-05T23:54:48Z",
       "comments": [
         {
@@ -1300,6 +1300,20 @@
           "body": "The general philosophy that I think would be helpful to maintain in terms of \"what should go in the envelope\" is that: only the minimum necessary in order for the OPAQUE protocol to function -- therefore, the skU parameter belongs there. I'm hoping that if an application wishes to transmit ciphersuite information and harden parameters in the envelope, they can instead make use of the `export_key` parameter as a key for authenticated encryption.\r\n\r\n> What about browser-based login with clients that were not pre-configured? Are you intentionally not supporting this case?\r\n\r\nI think that this describes a less popular potential application of OPAQUE, which is why I would be hesitant to incorporate parameters that specifically support this into the envelope. At the same time, there is still the flexibility from the application layer to use `export_key` for this purpose.\r\n\r\n@hugokraw let me know what you think! Also cc: @chris-wood  since we had a discussion about this in the past as well.\r\n",
           "createdAt": "2021-02-07T00:22:03Z",
           "updatedAt": "2021-02-07T00:22:03Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Configuration information that may impact the derivation of RwdU cannot be protected by export_key. It is too late for that (e.g., in setting the hardening parameters or the algorithms with which export_key is derived and/or used.  \r\n\r\nThe point of using the envelope to transmit parameters is that it is the only information the client gets in an authenticated way. Actually, in the case of OPAQUE over TLS, the server will first authenticate using a TLS certificate. In this case, the server can transmit  hardening and other parameters to the client  authenticated under the certificate. We should not do anything now that will make it difficult to accommodate such configuration information in the over-TLS case.  \r\nWhat do you think @chris-wood ?",
+          "createdAt": "2021-02-07T22:04:15Z",
+          "updatedAt": "2021-02-07T22:04:15Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think what we have now is suitable for the TLS case. The future TLS spec can define how harden parameters are encoded and transmitted. And the client, if it supports those parameters, can use them. (In other words, the parameters part of the configuration, and the future TLS spec would just define how to express and choose the configuration.)\n\nI don't think anything else needs to be done with respect to harden parameters in this particular spec.",
+          "createdAt": "2021-02-07T22:10:09Z",
+          "updatedAt": "2021-02-07T22:10:09Z"
         }
       ]
     },
@@ -1931,7 +1945,7 @@
       "labels": [],
       "body": "in the source there's a commented out part `## Envelope considerations` which mentions that not even `skU` needs to be included in the credentials wrapped in the envelope, instead skU can be derived from `rwd`. there's a note that this part should be \"brought back after updating\". if this is indeed the case, do not forget to change \r\n> Applications MUST include skU in secret_credentials\r\nin the {#protocol-messages} section.",
       "createdAt": "2020-11-16T15:18:02Z",
-      "updatedAt": "2021-02-03T22:03:24Z",
+      "updatedAt": "2021-02-07T23:18:44Z",
       "closedAt": null,
       "comments": [
         {
@@ -1993,16 +2007,9 @@
         {
           "author": "bytemare",
           "authorAssociation": "NONE",
-          "body": "With the latest advancements here, I'd like to bring this back up.\r\n\r\nConsideration to support RSA in the Sigma setup (or anything other that hasn't defined a secure deterministic key pair generation) made this a blocker.\r\n\r\nSince the 'main' AKE now is 3DH and that the group used for 3DH[ is set to be the same as the one used in the OPRF](https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/104#issuecomment-772114793), we can leverage hashing _rwdu_ to the field for the secret key (e.g. hash-to-scalar() in hash-to-curve terminology). This would nicely lower the complexity and size of the envelope construction.\r\n\r\nI'm thinking about something like this:\r\nRegistration:\r\n```\r\nClient:\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUEXX\")\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. sku = HashToScalar( rwdu, \"Opaque-HashToScalarSku\")\r\n6. pku = sku*Base\r\n7. authKey = HKDF-Expand( rwdu, \"AuthKey\")\r\n8. authTag = Hmac ( authkey, nonce || pku || pks )\r\n9. envU = envelope(nonce, authTag)\r\n\r\nC -> S : pku, envU\r\n```\r\n\r\nThe envelope does not contain encrypted secret material anymore.\r\n\r\nThen during authentication:\r\n```\r\nC -> S : oprf request, AKE request\r\nS -> C : oprf response, AKE response, pks, envU\r\n```\r\n\r\nThe client then does the same steps as during registration and checks the tag. Upon successful verification, uses sku, pku, and pks to proceed with the AKE.",
+          "body": "With the latest advancements here, I'd like to bring this back up.\r\n\r\nConsideration to support RSA in the Sigma setup (or anything other that hasn't defined a secure deterministic key pair generation) made this a blocker.\r\n\r\nSince the 'main' AKE now is 3DH and that the group used for 3DH[ is set to be the same as the one used in the OPRF](https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/104#issuecomment-772114793), we can leverage hashing _rwdu_ to the field for the secret key (e.g. hash-to-scalar() in hash-to-curve terminology). This would nicely lower the complexity and size of the envelope construction.\r\n\r\nI'm thinking about something like this:\r\nRegistration:\r\n```\r\nClient:\r\n1. N = Unblind(blind, response.data)\r\n2. y = Finalize(pwdU, N, \"OPAQUEXX\")\r\n3. nonce = random(32)\r\n4. rwdU = HKDF-Extract(nonce, Harden(y, params))\r\n5. sku, pku = DeriveKeysFromSeed( rwdu )\r\r\n6. authKey = HKDF-Expand( rwdu, \"AuthKey\")\r\n7. authTag = Hmac ( authkey, nonce || pku || pks )\r\n8. envU = envelope(nonce, authTag)\r\n\r\nC -> S : pku, envU\r\n```\r\n\r\nThe envelope does not contain encrypted secret material anymore.\r\n\r\nThen during authentication:\r\n```\r\nC -> S : oprf request, AKE request\r\nS -> C : oprf response, AKE response, pks, envU\r\n```\r\n\r\nThe client then does the same steps as during registration and checks the tag. Upon successful verification, uses sku, pku, and pks to proceed with the AKE.\n\nThis works for AKEs accepting a `DeriveKeysFromSeed` function, which derives a key pair from a seed.\nIn the case of 3DH over the groups supported in OPRF, this would be the hash-to-curve `HashToScalar()` function (+ a DST).\n\nThe envelope would be reduced to this\n```\nenvelope {\n    nonce\n    authTag\n}\n```",
           "createdAt": "2021-02-03T19:45:24Z",
-          "updatedAt": "2021-02-03T19:45:24Z"
-        },
-        {
-          "author": "bytemare",
-          "authorAssociation": "NONE",
-          "body": "For cases where the AKE does not support deterministic key pair generation based on a seed, we could still use the envelope.",
-          "createdAt": "2021-02-03T19:47:35Z",
-          "updatedAt": "2021-02-03T19:47:35Z"
+          "updatedAt": "2021-02-07T23:18:01Z"
         },
         {
           "author": "stef",
@@ -3207,7 +3214,7 @@
       "labels": [],
       "body": "In the current version of the draft, there are occurrences such as:\r\n\r\n```\r\nstruct {\r\n    SerializedElement data;\r\n    opaque pkS<1..2^16-1>;\r\n} RegistrationResponse;\r\n```\r\n\r\n```\r\nstruct {\r\n    opaque pkU<1..2^16-1>;\r\n    Envelope envU;\r\n} RegistrationUpload;\r\n```\r\n\r\nShould we change these to instead say:\r\n```\r\n    opaque pkS[LK];\r\n```\r\n\r\nwhere `LK` is a fixed constant dependent on the group representation?\r\n\r\n@chris-wood ",
       "createdAt": "2021-01-22T03:24:18Z",
-      "updatedAt": "2021-02-06T00:03:02Z",
+      "updatedAt": "2021-02-09T05:48:07Z",
       "closedAt": null,
       "comments": [
         {
@@ -3216,6 +3223,13 @@
           "body": "This seems fine, but I would say that `LK` is not a function of the *group*, but simply the fixed length of an AKE public key. @kevinlewi, could you please propose text?",
           "createdAt": "2021-02-05T23:56:36Z",
           "updatedAt": "2021-02-05T23:56:36Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "See my comment on #132 ",
+          "createdAt": "2021-02-09T05:48:07Z",
+          "updatedAt": "2021-02-09T05:48:07Z"
         }
       ]
     },
@@ -3390,7 +3404,7 @@
       "labels": [],
       "body": "RFC 5869 limits the output length of Expand to 255*HashLen, but the envelope ciphertext has a larger capacity. (In theory, HKDF can produce any number of bytes, but we should abide by the interface limitations.) ",
       "createdAt": "2021-02-01T17:13:19Z",
-      "updatedAt": "2021-02-04T19:07:44Z",
+      "updatedAt": "2021-02-09T18:12:06Z",
       "closedAt": null,
       "comments": [
         {
@@ -3462,6 +3476,55 @@
           "body": "> Deterministic generation of RSA keys is non-standard, and the tricks and hacks to make it work are quite \"roll your own\".\r\n\r\nI sent the previous response without reading the full thread so I am repeating some stuff people were already saying. The issue is not deterministic generation but expansion of a seed to a full key generation. Note that any key generation starts from a seed to a PRG so this technique is quite universal. Where the tricks come into play is for reducing the cost of key generation (that in our case happens online during user authentication). It is not the end of the world and hopefully not too much of an issue with RSA (whose coming the the end of its life) but it can be an issue with lattice based and other PQ algorithms.",
           "createdAt": "2021-02-04T19:07:43Z",
           "updatedAt": "2021-02-04T19:07:43Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Yes, you're totally right, I was wrong in using that term, as I meant exactly what you described marvelously good. Thank you !\n\nAs for such a key reproduction for RSA, do you know about an acceptable method to reduce the cost to something acceptable if it reveals to be an issue ? (E.g. run in-browser on low power device)",
+          "createdAt": "2021-02-07T22:35:54Z",
+          "updatedAt": "2021-02-07T22:35:54Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I am not an expert on what implementations do these days for selecting random primes. But if we assume that primes are chosen by choosing a random value and testing for primality, then at time of password registration you would derive a PRF key P from rwdU. Then, test all values PRF_P(1), PRF_P(2), ... and choose the first two that are primes as your RSA primes. You can make the process of reconstructing the primes very efficient if you put in the envelope the positions i and j where the primes were found (these do not need to be encrypted).  ",
+          "createdAt": "2021-02-07T22:49:49Z",
+          "updatedAt": "2021-02-07T22:49:49Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "This was the method I was referencing to, but I'm not aware how \"standard\" it is (if it needs to be) or about reference paper on this. (Also, I'm always wary around RSA)",
+          "createdAt": "2021-02-07T23:00:50Z",
+          "updatedAt": "2021-02-07T23:00:50Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "In #121, the proposal is actually to use fixed-length keys instead of variable ones. This means that rather than limiting the maximum key size to be 255 bytes as I wrote earlier, we would instead use a parameter (e.g. `Nk`) to denote the key size, which could be set by the particular ciphersuite.\r\n\r\nI believe this means that we can defer the conversation of whether or not PQ algorithms or RSA would be restricted by this 255-byte limit, since such future specifications could simply set the `Nk` value to whatever is appropriate.\r\n\r\nSee the new comment I appended to the PR here (https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/137#issuecomment-774785807) which should incorporate this.",
+          "createdAt": "2021-02-07T23:11:37Z",
+          "updatedAt": "2021-02-07T23:13:28Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I thought that the concern was that HKDF limits the output to 255*HashLen and one could presumably have some algorithms that would require a larger private key (but see below). How does fixing the length of the key to some parameter addresses this issue? if Nk is shorter than 255*HashLen then there wasn't a problem to start with and if it is larger then you still have an issue with HKDF not producing enough bits for the encryption pad.  I must be misunderstanding this.\r\n\r\nBtw, I got confused earlier in this thread when I said we have a limit of 255 bytes for the HKDF pad (hence for the private key). The limit is 255*HashLen bytes which for a minimal hashlen of 32 bytes gives 255*32 bytes =65,280 bits or almost 65KB which does not seem too restrictive. ",
+          "createdAt": "2021-02-09T05:46:28Z",
+          "updatedAt": "2021-02-09T05:46:28Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "So, the problem that we are discussing originates from lines like this:\r\n\r\n```\r\nstruct {\r\n  opaque client_private_key<1..2^16-1>;\r\n} SecretCredentials;\r\n```\r\n\r\nIt says that the `client_private_key` value is allowed to be of any length between 1 and 2^16-1 bytes. However, because this value is eventually fed into an HKDF computation, if it were to actually be 2^16-1 bytes long, we would run into conflict with the HKDF limitations.\r\n\r\nSo, a couple of options for resolving this issue:\r\n- Limit the size of this value to be between 1..2^8-1 bytes long. This would save us 1 byte on the length-prefixing of this value, and would resolve the HKDF limitation issue, but as you pointed out, this could be too restrictive for future PQ/RSA-based values.\r\n- Limit the size of this value to be at most 25532 bytes long. This could work too (as it gets around the HKDF limitation issue, and should be large enough for future PQ/RSA-based values), but it seems a bit inelegant to hardcode this value.\r\n- Restrict this value to be exactly `Nk` bytes long, where `Nk` would be a parameter configured based on the ciphersuite selection. As discussed in #121, these key values don't need to be of variable-length size anyway, and so I think it would be most elegant to just rely on the configuration specifying exactly what `Nk` is, and **ensuring, when we propose new configurations, that no configuration specifies an `Nk` that exceeds the HKDF limitations**. So for example, `Nk` for Ristretto-Sha512 would be set to `32`, and maybe a future PQ/RSA-based scheme could pick a larger `Nk`.\r\n\r\nAlso, restricting the value to be exactly `Nk` bytes long means that we no longer have to length-prefix these currently variable-length values (thus saving 1-2 bytes on the wire).\r\n\r\nHope that makes sense @hugokraw!",
+          "createdAt": "2021-02-09T12:49:42Z",
+          "updatedAt": "2021-02-09T12:51:38Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Your solution does not address the real issue here which is the limit of 8160 bytes imposed by HKDF. To me it makes more sense to have this as a limit instead of asking to configure the exact number. The latter reduces flexibility that future applications may want to have without much gain.  But, as always, for decisions that do not have a significant security/cryptography implication, I delegate to you guys.",
+          "createdAt": "2021-02-09T18:12:06Z",
+          "updatedAt": "2021-02-09T18:12:06Z"
         }
       ]
     },
@@ -3481,6 +3544,22 @@
       "createdAt": "2021-02-03T00:38:07Z",
       "updatedAt": "2021-02-03T20:27:18Z",
       "closedAt": "2021-02-03T20:27:18Z",
+      "comments": []
+    },
+    {
+      "number": 142,
+      "id": "MDU6SXNzdWU4MDU5NjQ5Mjk=",
+      "title": "KE2 and KE3 transcript mac pre-hashing",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/142",
+      "state": "OPEN",
+      "author": "bytemare",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "In the poc, KE2 and KE3 have their transcript hashed before feeding it into the HMAC\r\n\r\nKE2 https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/opaque_ake.sage#L160\r\nKE3 https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/opaque_ake.sage#L207\r\n\r\nBut the draft doesn't mention these pre-hashing steps. This changes the HMAC output, thus don't conform with the design in the draft.\r\ncc @chris-wood and @kevinlewi",
+      "createdAt": "2021-02-10T23:39:42Z",
+      "updatedAt": "2021-02-10T23:39:42Z",
+      "closedAt": null,
       "comments": []
     }
   ],
@@ -8455,7 +8534,7 @@
       "labels": [],
       "body": "Changes all opaque key types to be at most 255 bytes (instead of 2^16-1). Also changed encrypted_creds in the envelope to have the same restriction.\r\n\r\nNote: Still need to update the test vectors to match this new change.\r\n\r\nCloses #132 ",
       "createdAt": "2021-02-03T20:29:15Z",
-      "updatedAt": "2021-02-04T19:12:59Z",
+      "updatedAt": "2021-02-07T23:12:44Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "111b02c884ca967d6c78182dae08f7d83d4be7ae",
@@ -8473,6 +8552,13 @@
           "body": "> Changes all opaque key types to be at most 255 bytes (instead of 2^16-1). Also changed encrypted_creds in the envelope to have the same restriction.\r\n\r\nThis may be too restrictive with PQ algorithms. So if you set that limit, a discussion will be needed about what you do when the algorithm you want to deploy has more than 255 bytes. I will check more about lattice-based schemes and how well they accommodate expanding a PRG seed (namely, what's the computational cost of expanding the seed to a full key).",
           "createdAt": "2021-02-04T19:12:59Z",
           "updatedAt": "2021-02-04T19:12:59Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Putting this in draft mode so that we can address #121 with this PR as well. I intend to add a new `Nk` parameter to denote the key size, which would be set in the configuration for the ciphersuite.",
+          "createdAt": "2021-02-07T23:12:18Z",
+          "updatedAt": "2021-02-07T23:12:44Z"
         }
       ],
       "reviews": []
@@ -8615,6 +8701,58 @@
           "updatedAt": "2021-02-04T13:11:16Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 140,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTcwOTc0OTU1",
+      "title": "Addressing comments from issue #124",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/140",
+      "state": "OPEN",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "@stef, replying to your suggestions in-line below. Please let me know if these adequately address the concerns you brought up! Closes #124 \r\n\r\n> > 2OSP and OS2IP: Convert a byte string to and from a non-negative integer as described in {{?RFC8017}}.\r\n> \r\n> link to https://tools.ietf.org/html/rfc8017#section-4.1 and https://tools.ietf.org/html/rfc8017#section-4.2\r\n> \r\n> perhaps also note that this is also known as the htons/ntohs functions in POSIX - implementors might find this very helpful!\r\n\r\nAdded a mention that these can be found in Section 4, but did not add the POSIX references since I could not find a link to them, and these may not be as widely known.\r\n\r\n> \r\n> > kX: An OPRF private key used in role X. For example, kU refers to U's private OPRF key.\r\n> \r\n> is there any other role besides kU?\r\n\r\nGood point, changed the text to refer to `oprf_key` instead of `kU`.\r\n\r\n> \r\n> > random(n): Generate a random byte string of length n bytes.\r\n> \r\n> note that this random string should be of cryptographic quality. although there is a note under all the definitions saying so, it's better to have it closer where it matters and less ignored.\r\n\r\nAdded a note here that it should be cryptographically-secure\r\n\r\n> \r\n> in #cryptographic-protocol-and-algorithm-dependencies-dependencies\r\n> \r\n> the note that only the base variant of the OPRF is needed is also a bit far away from where the OPRF dependency is specified.\r\n\r\nShifted the sentence to be right under the OPRF text\r\n\r\n> \r\n> > auth_tag : Authentication tag protecting the contents of the envelope, covering InnerEnvelope and CleartextCredentials\r\n> \r\n> then it notes:\r\n> \r\n> > The full procedure for constructing Envelope and InnerEnvelope from SecretCredentials and CleartextCredentials is described in {{finalize-request}}.\r\n> \r\n> which is:\r\n> \r\n> > 1. auth_tag = HMAC(auth_key, concat(contents, cleartext_creds))\r\n> \r\n> it's all there but quite dispersed spatially, someone trying to implement this has to jump around in the doc, it's very hard to read this spec sequentially.\r\n\r\nUnfortunately I could not find a way to address this without a major rework to the organization of the doc, since I think it is somewhat inherent to how it is currently laid out.\r\n\r\n> \r\n> > Credential information corresponding to the configuration-specific mode, along with the user public key pkU and private key skU, are stored in a Credentials object with the following named fields:\r\n> > skU, pkU, idU, idS\r\n> \r\n> it is not necessary to specify for interoperability how an implementation stores these values. also for security i think it is better to handle skU seperatately from the other values - or maybe not, depending on the configuration, if any of the other values is also to be kept secret. a sensible implementation wants to actually protect the sensitive values differently from the public values. maybe by storing them in mprotected/sanitized-after-use storage, in secure elements, or something else.\r\n> \r\n> i do see how it is a shortcut to list all the necessary items from the creds struture as an input to finalizerequest though.\r\n\r\nAdded text saying that this is \"recommended\", to emphasize the point that it is not required\r\n\r\n> \r\n> > Clients MUST NOT use the same key pair (skU, pkU) for two different accounts.\r\n> \r\n> why is this, when the server can use the same keypair for different accounts? in the case when idU == pkU this is not even possible i guess.\r\n\r\nRight, well if multiple accounts have the same skU associated with them, then decrypting one envelope would result in yielding the same secret for another without having to know the other account's password -- presumably this is bad for security.\r\n\r\n> \r\n> > pkS : An encoded public key that will be used for the online authenticated key exchange stage.\r\n> \r\n> add explicitly that this is the _servers_ pubkey\r\n> \r\n> similarly be explicit also about this:\r\n> \r\n> > pkU : An encoded public key, corresponding to the private key skU.\r\n> \r\n\r\nAdded, thanks!\r\n\r\n> #credential-file\r\n> \r\n> we agree these things need to be persisted, however i do not see how this helps interoperability or security specifying this struct. i propose to change the wording to something like:\r\n> \r\n> the server needs to be able to reproduce the following values for the online phase.\r\n> \r\n> an implementation might choose to generate kU by doing a KDF on some global secret value in combination with idU for example, then this storage of kU can be skipped. again we should realize that kU is a sensitive value which needs protection (like sanitization, possibly also at-rest encryption, not being swapped to disk, stored in a secure element, etc) while envU is an encrypted blob that does not need these kind of protections. in case pkU == idU it might be possbile that envU is stored in a hashdictionary that is indexed by idU, and thus pkU does not need to be stored at all. lumping these values together and requiring them to be stored in this structure creates unnecessary limitations on implementations. while this specification might harm security, it does not really improve interoperability.\r\n> \r\n> either delete this section, or make this optional, and put it into an non-binding appendix.\r\n> \r\n> another thing against this, is the usage of export-keys, in case an implementation chooses to encrypt data with an export-key but wants to stay stateless on the client, then the export-key encrypted data might also be stored on the server.\r\n\r\nAdded text to emphasize that this is not a requirement of the spec: \"The below structure represents an example of how\r\nthese values might be conveniently stored together.\"",
+      "createdAt": "2021-02-10T10:01:08Z",
+      "updatedAt": "2021-02-10T10:01:09Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
+      "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
+      "headRefName": "stefs_comments",
+      "headRefOid": "d186d249c017ea81c4f26a03dae156698fe4a34f",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 141,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTcxMDA2MTk5",
+      "title": "Adding Nk parameter to fix public/private key sizes",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/141",
+      "state": "OPEN",
+      "author": "kevinlewi",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Gets rid of the variable-length encoding of the client/server public/private keys, and restricts them to be of a fixed length (denoted by the parameter `Nk`). Note that `Nk` is a parameter that must be specified for each AKE instantiation -- this gives the flexibility of future AKE instantiations that are PQ to use a larger `Nk` if necessary.\r\n\r\nQuestion: should we have an Nsk and Npk, since the size of the private and public keys may not necessarily be the same?\r\n\r\n\r\nCloses #121 and #132 ",
+      "createdAt": "2021-02-10T10:48:57Z",
+      "updatedAt": "2021-02-10T10:48:57Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
+      "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
+      "headRefName": "adding_nk",
+      "headRefOid": "c7c1233bcba07fa5679489645f6caec34b236605",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
