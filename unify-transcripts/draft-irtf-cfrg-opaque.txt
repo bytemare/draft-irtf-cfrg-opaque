@@ -781,8 +781,8 @@ Steps:
       opaque context<0..255> = Context;
    } HkdfLabel;
 
-   Derive-Secret(Secret, Label, Transcript) =
-       HKDF-Expand-Label(Secret, Label, Hash(Transcript), Nh)
+   Derive-Secret(Secret, Label, Transcript-Hash) =
+       HKDF-Expand-Label(Secret, Label, Transcript-Hash, Nh)
 
    HKDF uses Hash as its underlying hash function, which is the same as
    that which is indicated by the OPAQUE instantiation.  Note that the
@@ -855,11 +855,11 @@ Steps:
    also outputs "session_key".  The schedule for computing this key
    material is below.
 
-HKDF-Extract(salt=0, IKM)
-    |
-    +-> Derive-Secret(., "handshake secret", info || transcript) = handshake_secret
-    |
-    +-> Derive-Secret(., "session secret", info || transcript) = session_key
+   HKDF-Extract(salt=0, IKM)
+       |
+       +-> Derive-Secret(., "handshake secret", info) = handshake_secret
+       |
+       +-> Derive-Secret(., "session secret", info) = session_key
 
    From "handshake_secret", Km2, Km3, and Ke2 are computed as follows:
 
@@ -872,17 +872,21 @@ HKDF-Extract(salt=0, IKM)
 
    Nh is the output length of the underlying hash function.
 
-   The Derive-Secret parameter "info" is computed as follows:
+   The Derive-Secret parameter "info" is computed as:
 
-  info = "3DH keys" || I2OSP(len(client_identity), 2) || client_identity
-                    || I2OSP(len(server_identity), 2) || server_identity
+   info = Hash("3DH" || client_preamble || client_transcript ||
+                        server_preamble || server_transcript),
+
+   where "client_preamble" and "server_preamble" are computed as:
+
+   client_preamble = I2OSP(len(client_identity), 2) || client_identity
+   server_preamble = I2OSP(len(server_identity), 2) || server_identity
+
+   "client_transcript" KE1 and "server_transcript" is KE2 excluding
+   KE2.enc_server_info and KE2.mac.
 
    See Section 6.2 for more information about identities client_identity
    and server_identity.
-
-   The Derive-Secret parameter "transcript" is computed as follows the
-   concatenation of KE1 and KE2, excluding KE2.enc_server_info and
-   KE2.mac.
 
    Let "epkS" and "eskS" be "server_keyshare" and the corresponding
    secret key, and "epkU" and "eskU" be "client_keyshare" and the
@@ -899,13 +903,15 @@ HKDF-Extract(salt=0, IKM)
 
    Clients and servers use keys Km2 and Km3 in computing KE2.mac and
    KE3.mac, respectively.  These values are computed as HMAC(mac_key,
-   transcript), where mac_key and transcript are as follows:
+   info || transcript), where mac_key, info, and transcript are as
+   follows:
 
-   *  KE2.mac: mac_key is Km2 and transcript is the hash of the
-      concatenation of KE1 and KE2, excluding KE2.mac.
+   *  KE2.mac: mac_key is Km2, info is as defined in Section 4.2.2.2,
+      and transcript concatenation of KE1 and KE2, excluding KE2.mac.
 
-   *  KE3.mac: mac_key is Km3 and transcript is the hash of the
-      concatenation of KE1 and KE2, including KE2.mac.
+   *  KE3.mac: mac_key is Km3, info is as defined in Section 4.2.2.2,
+      and transcript is the hash of the concatenation of KE1 and KE2,
+      including KE2.mac.
 
    The server applicaton info, an opaque byte string "server_info", is
    encrypted using a technique similar to that used for secret
@@ -1394,11 +1400,11 @@ Appendix B.  Alternate AKE Instantiations
 B.1.  HMQV Instantiation Sketch
 
    An HMQV instantiation would work similar to OPAQUE-3DH, differing
-   primarily in the key schedule [HMQV].  First, the key schedule "info"
-   value would use a different constant prefix -- "HMQV keys" instead of
-   "3DH keys" -- as shown below.
+   primarily in the key schedule [HMQV].  First, the key schedule
+   "preamble" value would use a different constant prefix -- "HMQV"
+   instead of "3DH" -- as shown below.
 
- info = "HMQV keys" || I2OSP(len(client_identity), 2) || client_identity
+  preamble = "HMQV" || I2OSP(len(client_identity), 2) || client_identity
                     || I2OSP(len(server_identity), 2) || server_identity
 
    Second, the IKM derivation would change.  Assuming HMQV is
@@ -1440,8 +1446,8 @@ B.2.  SIGMA-I Instantiation Sketch
    where the MAC is computed as in OPAQUE-3DH.
 
    The key schedule would also change.  Specifically, the key schedule
-   "info" value would use a different constant prefix -- "SIGMA-I keys"
-   instead of "3DH keys" -- and the "IKM" computation would use only the
+   "preamble" value would use a different constant prefix -- "SIGMA-I"
+   instead of "3DH" -- and the "IKM" computation would use only the
    ephemeral key shares exchanged between client and server.
 
 Appendix C.  Test Vectors
