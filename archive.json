@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-02-11T00:44:56.837015+00:00",
+  "timestamp": "2021-02-14T00:46:28.362528+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -2982,7 +2982,7 @@
       "labels": [],
       "body": "I'd like to reach an agreement on the names of variables we use for OPAQUE, which also impact the parameters to each of the test vectors we release. Here is what I have so far (open to feedback!):\r\n\r\nInputs:\r\n\r\n```\r\n    pk_u: Client's static public key\r\n    sk_u: Client's static private key\r\n    epk_u: Client's ephemeral public key\r\n    esk_u: Client's ephemeral private key\r\n    pk_s: Server's static public key\r\n    sk_s: Server's static private key\r\n    epk_s: Server's ephemeral public key\r\n    esk_s: Server's ephemeral private key\r\n    password: Client's password\r\n    id_u: idU\r\n    id_s: idS\r\n    blind_registration: Scalar used to blind client's password during registration\r\n    blind_login: Scalar used to blind client's password during login\r\n    oprf_key: kU, the server's secret key for the OPRF\r\n    envelope_nonce: nonce used for envelope\r\n    client_nonce: nonce from client used in AKE\r\n    server_nonce: nonce from server used in AKE\r\n    info1: Plaintext info field populated by client in first AKE message\r\n    info2: Encrypted info field populated by server in second AKE message\r\n```\r\n\r\nOutputs:\r\n\r\n```\r\n    registration_request: First message of registration\r\n    registration_response: Second message of registration\r\n    registration_upload: Third message of registration\r\n    credential_request: First message of login\r\n    credential_response: Second message of login\r\n    credential_finalization: Third message of login\r\n    credential_file: The object stored by the server after registration has completed\r\n    export_key: The export_key parameter output by registration and login's final step on the client\r\n    session_key: The output of the client and server after the AKE\r\n```\r\n\r\nThere is also an opportunity to publish \"intermediate values\" here, such as the envelope bytes, the \"rwdU\" value, etc. They are not included here at the moment, but we could add additional values to represent them as well, if desired.",
       "createdAt": "2021-01-21T17:16:39Z",
-      "updatedAt": "2021-02-03T21:56:16Z",
+      "updatedAt": "2021-02-11T15:03:30Z",
       "closedAt": "2021-02-03T00:32:02Z",
       "comments": [
         {
@@ -3075,6 +3075,20 @@
           "body": "thanks a lot!",
           "createdAt": "2021-02-03T21:56:16Z",
           "updatedAt": "2021-02-03T21:56:16Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "i'm a bit confused, why is this issue closed? looking at \r\nhttps://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/draft-irtf-cfrg-opaque.md#opaque-3dh-test-vector-1\r\nand at https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/vectors/vectors.json i see a lot of parameters which i have no clue what they correspond to in the specification.",
+          "createdAt": "2021-02-11T14:38:23Z",
+          "updatedAt": "2021-02-11T14:38:23Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "huh. sorry, i see that the 3dh part does name some of these values as in the testvectors. will check the consistency of those.",
+          "createdAt": "2021-02-11T15:03:30Z",
+          "updatedAt": "2021-02-11T15:03:30Z"
         }
       ]
     },
@@ -3269,7 +3283,7 @@
       "id": "MDU6SXNzdWU3OTI4ODAwNTY=",
       "title": "bunch of questions - after a full reading of the latest draft",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/124",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "stef",
       "authorAssociation": "NONE",
       "assignees": [
@@ -3278,8 +3292,8 @@
       "labels": [],
       "body": "> 2OSP and OS2IP: Convert a byte string to and from a non-negative integer as described in {{?RFC8017}}.\r\n\r\nlink to https://tools.ietf.org/html/rfc8017#section-4.1 and https://tools.ietf.org/html/rfc8017#section-4.2\r\n\r\nperhaps also note that this is also known as the htons/ntohs functions in POSIX - implementors might find this very helpful!\r\n\r\n------- \r\n\r\n> kX: An OPRF private key used in role X. For example, kU refers to U's private OPRF key.\r\n\r\nis there any other role besides kU?\r\n\r\n------- \r\n\r\n> random(n): Generate a random byte string of length n bytes.\r\n\r\nnote that this random string should be of cryptographic quality. although there is a note under all the definitions saying so, it's better to have it closer where it matters and less ignored.\r\n\r\n\r\n------- \r\n\r\nin #cryptographic-protocol-and-algorithm-dependencies-dependencies\r\n\r\nthe note that only the base variant of the OPRF is needed is also a bit far away from where the OPRF dependency is specified.\r\n\r\n------- \r\n\r\n> auth_tag : Authentication tag protecting the contents of the envelope, covering InnerEnvelope and CleartextCredentials\r\n\r\nthen it notes:\r\n> The full procedure for constructing Envelope and InnerEnvelope from SecretCredentials and CleartextCredentials is described in {{finalize-request}}.\r\n\r\nwhich is:\r\n\r\n> 12. auth_tag = HMAC(auth_key, concat(contents, cleartext_creds))\r\n\r\nit's all there but quite dispersed spatially, someone trying to implement this has to jump around in the doc, it's very hard to read this spec sequentially.\r\n\r\n------- \r\n\r\n> Credential information corresponding to the configuration-specific mode, along with the user public key pkU and private key skU, are stored in a Credentials object with the following named fields:\r\n> skU, pkU, idU, idS\r\n\r\nit is not necessary to specify for interoperability how an implementation stores these values. also for security i think it is better to handle skU seperatately from the other values - or maybe not, depending on the configuration, if any of the other values is also to be kept secret. a sensible implementation wants to actually protect the sensitive values differently from the public values. maybe by storing them in mprotected/sanitized-after-use storage, in secure elements, or something else.\r\n\r\ni do see how it is a shortcut to list all the necessary items from the creds struture as an input to finalizerequest though.\r\n\r\n> Clients MUST NOT use the same key pair (skU, pkU) for two different accounts.\r\n\r\nwhy is this, when the server can use the same keypair for different accounts? in the case when idU == pkU this is not even possible i guess.\r\n\r\n------\r\n\r\n> pkS : An encoded public key that will be used for the online authenticated key exchange stage.\r\n\r\nadd explicitly that this is the *servers* pubkey\r\n\r\nsimilarly be explicit also about this:\r\n\r\n> pkU : An encoded public key, corresponding to the private key skU.\r\n\r\n-------\r\n\r\n#credential-file\r\n\r\nwe agree these things need to be persisted, however i do not see how this helps interoperability or security specifying this struct. i propose to change the wording to something like:\r\n\r\nthe server needs to be able to reproduce the following values for the online phase.\r\n\r\nan implementation might choose to generate kU by doing a KDF on some global secret value in combination with idU for example, then this storage of kU can be skipped. again we should realize that kU is a sensitive value which needs protection (like sanitization, possibly also at-rest encryption, not being swapped to disk, stored in a secure element, etc) while envU is an encrypted blob that does not need these kind of protections. in case pkU == idU it might be possbile that envU is stored in a hashdictionary that is indexed by idU, and thus pkU does not need to be stored at all. lumping these values together and requiring them to be stored in this structure creates unnecessary limitations on implementations. while this specification might harm security, it does not really improve interoperability.\r\n\r\neither delete this section, or make this optional, and put it into an non-binding appendix.\r\n\r\nanother thing against this, is the usage of export-keys, in case an implementation chooses to encrypt data with an export-key but wants to stay stateless on the client, then the export-key encrypted data might also be stored on the server.\r\n",
       "createdAt": "2021-01-24T20:01:04Z",
-      "updatedAt": "2021-02-06T00:03:15Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-13T17:56:42Z",
+      "closedAt": "2021-02-13T17:56:42Z",
       "comments": []
     },
     {
@@ -3559,6 +3573,53 @@
       "body": "In the poc, KE2 and KE3 have their transcript hashed before feeding it into the HMAC\r\n\r\nKE2 https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/opaque_ake.sage#L160\r\nKE3 https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/opaque_ake.sage#L207\r\n\r\nBut the draft doesn't mention these pre-hashing steps. This changes the HMAC output, thus don't conform with the design in the draft.\r\ncc @chris-wood and @kevinlewi",
       "createdAt": "2021-02-10T23:39:42Z",
       "updatedAt": "2021-02-10T23:39:42Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 143,
+      "id": "MDU6SXNzdWU4MDY0NDQzMDI=",
+      "title": "follow rfc2119 to indicate requirement levels",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/143",
+      "state": "CLOSED",
+      "author": "stef",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "rfcs generally refer and use https://tools.ietf.org/html/rfc2119 to define requirement levels. this spec should follow that tradition diligently. ",
+      "createdAt": "2021-02-11T14:33:06Z",
+      "updatedAt": "2021-02-13T18:05:18Z",
+      "closedAt": "2021-02-13T17:57:56Z",
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "RFC2119 [is already cited](https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html#section-1.1) for the purposes of requirement and normative language.",
+          "createdAt": "2021-02-13T17:57:56Z",
+          "updatedAt": "2021-02-13T17:57:56Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "aaah. i didn't see this in the source markdown file.",
+          "createdAt": "2021-02-13T18:05:18Z",
+          "updatedAt": "2021-02-13T18:05:18Z"
+        }
+      ]
+    },
+    {
+      "number": 146,
+      "id": "MDU6SXNzdWU4MDc4MzIzOTk=",
+      "title": "Inconsistency between OPRF ciphersuites in draft-irtf-cfrg-voprf and draft-irtf-cfrg-opaque",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/146",
+      "state": "OPEN",
+      "author": "rot256",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "draft-irtf-cfrg-voprf lists the following OPRF  instanciations:\r\n\r\n\r\n  OPRF(ristretto255, **SHA-256**)\r\n  OPRF(decaf448, SHA-512) \r\n  OPRF(P-256, SHA-256)\r\n  OPRF(P-384, SHA-512)\r\n  OPRF(P-521, SHA-512)\r\n\r\nHowever section 5 of draft-irtf-cfrg-opaque, says:\r\n\r\n\r\n   An OPAQUE configuration is a tuple (OPRF, Hash, MHF, EnvelopeMode).\r\n   The OPAQUE OPRF protocol is drawn from the \"base mode\" variant of\r\n   [I-D.irtf-cfrg-voprf].  The following OPRF ciphersuites are\r\n   supported:\r\n\r\n   *  OPRF(ristretto255, **SHA-512**)\r\n   *  OPRF(decaf448, SHA-512)\r\n   *  OPRF(P-256, SHA-256)\r\n   *  OPRF(P-384, SHA-512)\r\n   *  OPRF(P-521, SHA-512)\r\n\r\nIt seems like it should be SHA-256 in both places (targeting 128-bits of security)?",
+      "createdAt": "2021-02-13T21:25:17Z",
+      "updatedAt": "2021-02-13T21:25:40Z",
       "closedAt": null,
       "comments": []
     }
@@ -8708,25 +8769,42 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTcwOTc0OTU1",
       "title": "Addressing comments from issue #124",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/140",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "@stef, replying to your suggestions in-line below. Please let me know if these adequately address the concerns you brought up! Closes #124 \r\n\r\n> > 2OSP and OS2IP: Convert a byte string to and from a non-negative integer as described in {{?RFC8017}}.\r\n> \r\n> link to https://tools.ietf.org/html/rfc8017#section-4.1 and https://tools.ietf.org/html/rfc8017#section-4.2\r\n> \r\n> perhaps also note that this is also known as the htons/ntohs functions in POSIX - implementors might find this very helpful!\r\n\r\nAdded a mention that these can be found in Section 4, but did not add the POSIX references since I could not find a link to them, and these may not be as widely known.\r\n\r\n> \r\n> > kX: An OPRF private key used in role X. For example, kU refers to U's private OPRF key.\r\n> \r\n> is there any other role besides kU?\r\n\r\nGood point, changed the text to refer to `oprf_key` instead of `kU`.\r\n\r\n> \r\n> > random(n): Generate a random byte string of length n bytes.\r\n> \r\n> note that this random string should be of cryptographic quality. although there is a note under all the definitions saying so, it's better to have it closer where it matters and less ignored.\r\n\r\nAdded a note here that it should be cryptographically-secure\r\n\r\n> \r\n> in #cryptographic-protocol-and-algorithm-dependencies-dependencies\r\n> \r\n> the note that only the base variant of the OPRF is needed is also a bit far away from where the OPRF dependency is specified.\r\n\r\nShifted the sentence to be right under the OPRF text\r\n\r\n> \r\n> > auth_tag : Authentication tag protecting the contents of the envelope, covering InnerEnvelope and CleartextCredentials\r\n> \r\n> then it notes:\r\n> \r\n> > The full procedure for constructing Envelope and InnerEnvelope from SecretCredentials and CleartextCredentials is described in {{finalize-request}}.\r\n> \r\n> which is:\r\n> \r\n> > 1. auth_tag = HMAC(auth_key, concat(contents, cleartext_creds))\r\n> \r\n> it's all there but quite dispersed spatially, someone trying to implement this has to jump around in the doc, it's very hard to read this spec sequentially.\r\n\r\nUnfortunately I could not find a way to address this without a major rework to the organization of the doc, since I think it is somewhat inherent to how it is currently laid out.\r\n\r\n> \r\n> > Credential information corresponding to the configuration-specific mode, along with the user public key pkU and private key skU, are stored in a Credentials object with the following named fields:\r\n> > skU, pkU, idU, idS\r\n> \r\n> it is not necessary to specify for interoperability how an implementation stores these values. also for security i think it is better to handle skU seperatately from the other values - or maybe not, depending on the configuration, if any of the other values is also to be kept secret. a sensible implementation wants to actually protect the sensitive values differently from the public values. maybe by storing them in mprotected/sanitized-after-use storage, in secure elements, or something else.\r\n> \r\n> i do see how it is a shortcut to list all the necessary items from the creds struture as an input to finalizerequest though.\r\n\r\nAdded text saying that this is \"recommended\", to emphasize the point that it is not required\r\n\r\n> \r\n> > Clients MUST NOT use the same key pair (skU, pkU) for two different accounts.\r\n> \r\n> why is this, when the server can use the same keypair for different accounts? in the case when idU == pkU this is not even possible i guess.\r\n\r\nRight, well if multiple accounts have the same skU associated with them, then decrypting one envelope would result in yielding the same secret for another without having to know the other account's password -- presumably this is bad for security.\r\n\r\n> \r\n> > pkS : An encoded public key that will be used for the online authenticated key exchange stage.\r\n> \r\n> add explicitly that this is the _servers_ pubkey\r\n> \r\n> similarly be explicit also about this:\r\n> \r\n> > pkU : An encoded public key, corresponding to the private key skU.\r\n> \r\n\r\nAdded, thanks!\r\n\r\n> #credential-file\r\n> \r\n> we agree these things need to be persisted, however i do not see how this helps interoperability or security specifying this struct. i propose to change the wording to something like:\r\n> \r\n> the server needs to be able to reproduce the following values for the online phase.\r\n> \r\n> an implementation might choose to generate kU by doing a KDF on some global secret value in combination with idU for example, then this storage of kU can be skipped. again we should realize that kU is a sensitive value which needs protection (like sanitization, possibly also at-rest encryption, not being swapped to disk, stored in a secure element, etc) while envU is an encrypted blob that does not need these kind of protections. in case pkU == idU it might be possbile that envU is stored in a hashdictionary that is indexed by idU, and thus pkU does not need to be stored at all. lumping these values together and requiring them to be stored in this structure creates unnecessary limitations on implementations. while this specification might harm security, it does not really improve interoperability.\r\n> \r\n> either delete this section, or make this optional, and put it into an non-binding appendix.\r\n> \r\n> another thing against this, is the usage of export-keys, in case an implementation chooses to encrypt data with an export-key but wants to stay stateless on the client, then the export-key encrypted data might also be stored on the server.\r\n\r\nAdded text to emphasize that this is not a requirement of the spec: \"The below structure represents an example of how\r\nthese values might be conveniently stored together.\"",
       "createdAt": "2021-02-10T10:01:08Z",
-      "updatedAt": "2021-02-10T10:01:09Z",
+      "updatedAt": "2021-02-13T17:56:42Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
       "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
       "headRefName": "stefs_comments",
       "headRefOid": "d186d249c017ea81c4f26a03dae156698fe4a34f",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "closedAt": "2021-02-13T17:56:42Z",
+      "mergedAt": "2021-02-13T17:56:41Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "572f395c8c536694ed8efe35fa80db2b213cdefd"
+      },
+      "comments": [
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "good job. thanks!",
+          "createdAt": "2021-02-11T14:16:25Z",
+          "updatedAt": "2021-02-11T14:16:25Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "btw posix has a definition here https://pubs.opengroup.org/onlinepubs/9699919799/functions/htonl.html also known as: \r\n\r\n> The Open Group Base Specifications Issue 7, 2018 edition IEEE Std 1003.1-2017",
+          "createdAt": "2021-02-11T14:23:28Z",
+          "updatedAt": "2021-02-11T14:23:28Z"
+        }
+      ],
       "reviews": []
     },
     {
@@ -8753,6 +8831,151 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 144,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTcyOTMyMDYy",
+      "title": "Address #142 and minor suggestions to the draft",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/144",
+      "state": "CLOSED",
+      "author": "bytemare",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "In _opaque_ake.sage_ drop pre-hashing and carry only the transcript in the state + minor renaming to avoid confusion.\r\n\r\nSome typo fixing in the draft and suggestions.",
+      "createdAt": "2021-02-13T12:39:27Z",
+      "updatedAt": "2021-02-13T18:51:23Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
+      "headRepository": "bytemare/draft-irtf-cfrg-opaque",
+      "headRefName": "master",
+      "headRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
+      "closedAt": "2021-02-13T17:54:07Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "can you please produce a diff that is not a complete replacement of the changed files. reviewing the changes like this is a bit uneconomic.",
+          "createdAt": "2021-02-13T12:57:47Z",
+          "updatedAt": "2021-02-13T12:57:47Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Oh, I see. I don't know how this happened. Do you know how I can avoid that?",
+          "createdAt": "2021-02-13T17:19:22Z",
+          "updatedAt": "2021-02-13T17:19:22Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Thanks, @stef! I submitted the same change in #145, with a correct diff :)",
+          "createdAt": "2021-02-13T18:51:22Z",
+          "updatedAt": "2021-02-13T18:51:22Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 145,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTcyOTc3NzAw",
+      "title": "Address #142 and minor suggestions to the draft",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/145",
+      "state": "OPEN",
+      "author": "bytemare",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "In opaque_ake.sage drop pre-hashing and carry only the transcript in the state + minor renaming to avoid confusion.\r\n\r\nSome typo fixing in the draft and suggestions for wording.\r\n\r\ncc @chris-wood",
+      "createdAt": "2021-02-13T18:50:06Z",
+      "updatedAt": "2021-02-14T00:43:18Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
+      "headRepository": "bytemare/draft-irtf-cfrg-opaque",
+      "headRefName": "master",
+      "headRefOid": "681df8652f2e109a008884d54e252190bdb2b430",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "why not hash the transcript?",
+          "createdAt": "2021-02-13T18:59:26Z",
+          "updatedAt": "2021-02-13T18:59:26Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "It's not specified in the draft. ",
+          "createdAt": "2021-02-13T19:00:42Z",
+          "updatedAt": "2021-02-13T19:00:42Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "the poc, the rust and my implementation did it like that. i think it comes from the paper. and it makes sense. i'd like to stick with it and rather specify it in the spec, than to drop it.",
+          "createdAt": "2021-02-13T20:47:30Z",
+          "updatedAt": "2021-02-13T20:47:30Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Why do you pre-hash it before hmac ?",
+          "createdAt": "2021-02-13T22:09:51Z",
+          "updatedAt": "2021-02-13T22:09:51Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "My PR comes from a conversation with @kevinlewi and @chris-wood, and we couldn't explain where this came from.\r\n\r\nI think I found it. The V1 says\r\n\r\n> * The explicit concatenation of elements under transcript2 and transcript3 can be replaced with hashed values of these elements, or their combinations, using a collision-resistant hash (e.g., as in the transcript-hash of TLS 1.3 [RFC8446]). \r\n\r\n\r\nbut this section is now absent. \r\n\r\nRFC8446 justifies this with the following\r\n\r\n> The reason for this construction is to allow the server to do a\r\n>    stateless HelloRetryRequest by storing just the hash of ClientHello1\r\n>    in the cookie, rather than requiring it to export the entire\r\n>    intermediate hash state (see Section 4.2.2).\r\n\r\nIs this useful in OPAQUE?",
+          "createdAt": "2021-02-13T22:20:36Z",
+          "updatedAt": "2021-02-13T23:14:19Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "interesting. i looked in the original paper and it is not there. there is one benefit for prehashing, the fact that the server does not have to preserve all the inputs for the hmac between the create-credential-response and the explicit authentication where the server verifies the km3 mac of the user.",
+          "createdAt": "2021-02-13T22:38:50Z",
+          "updatedAt": "2021-02-13T22:38:50Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "As Transcript3 is defined, it is transcript2 + server mac, and can be assembled at the KE2 stage.\nKeeping a hash of Transcript3 reduces the size of the server's state, indeed.",
+          "createdAt": "2021-02-13T22:45:10Z",
+          "updatedAt": "2021-02-13T22:45:43Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "From a security perspective, though, pre-hashing is a weaker construction, as it relies on the collision resistance of the pre-hashing function. Not hashing protects against a theoretical attack, I don't know if this has been considered in our case.",
+          "createdAt": "2021-02-14T00:14:44Z",
+          "updatedAt": "2021-02-14T00:14:56Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Actually, the server can compute the client_mac at KE2 as well. It doesn't actually need to preserve anything except the client_mac.\r\n\r\nSo the server does all its signing in KE2, the client all its signing in KE3, none need to carry any trace of transcript2 and transcripts. Hence, no pre-hashing needed.",
+          "createdAt": "2021-02-14T00:40:33Z",
+          "updatedAt": "2021-02-14T00:40:33Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "indeed with the elimination of info3/einfo3 this makes sense.",
+          "createdAt": "2021-02-14T00:43:18Z",
+          "updatedAt": "2021-02-14T00:43:18Z"
+        }
+      ],
       "reviews": []
     }
   ]
