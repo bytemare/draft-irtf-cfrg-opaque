@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-02-14T00:46:28.362528+00:00",
+  "timestamp": "2021-02-16T00:44:59.973910+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -378,7 +378,7 @@
       "labels": [],
       "body": "We might consider standardizing the mechanism by which servers prevent user enumeration attacks. ",
       "createdAt": "2020-05-28T12:29:17Z",
-      "updatedAt": "2021-02-06T00:00:38Z",
+      "updatedAt": "2021-02-16T00:31:27Z",
       "closedAt": null,
       "comments": [
         {
@@ -387,6 +387,62 @@
           "body": "I support standardizing a method to prevent user enumeration attacks as part of the OPAQUE specification.",
           "createdAt": "2021-01-11T22:53:21Z",
           "updatedAt": "2021-01-11T22:53:21Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "After reviewing the text again, I think the response encryption approach is likely the only viable way forward here, if we are to do anything. This requires restructuring the RegistrationResponse and CredentialResponse structures and how clients process them. Let's focus on CredentialResponse to start, which currently looks like so:\r\n\r\n```\r\nstruct {\r\n    SerializedElement data;\r\n    opaque server_public_key<1..2^16-1>;\r\n    Envelope envelope;\r\n} CredentialResponse;\r\n```\r\n\r\nIf we were to encrypt this using an OPRF-derived key, this might look like the following:\r\n\r\n```\r\nstruct {\r\n    SerializedElement data;\r\n    opaque ciphertext<1..2^16-1>; // encryption of server_public_key and envelope\r\n} CredentialResponse;\r\n```\r\n\r\nClients might process this by doing the following:\r\n\r\n1. Derive some key from the OPRF given the client's input (client_identity) and the server-derived OPRF key (oprf_key = f(MK, client_identity)). (This would require the client send two blinded elements -- one for deriving the CredentialResponse decryption key, based only on username, and one for deriving the envelope encryption key, based on the password.)\r\n2. Decrypt CredentialResponse.ciphertext, revealing server_public_key and envelope.\r\n3. Process both of these as normal. \r\n\r\n(Maybe there's a way to do this with only a single OPRF evaluation, but I've written the naive interpretation above for discussion.) \r\n\r\nOverall, this seems like it wouldn't be too terrible to implement. It also has the benefit of encrypting more information on the wire. But I'd really like to see if we can simplify it, perhaps by minimizing OPRF evaluations done, before writing up and implementing the change.\r\n\r\n@hugokraw, do you have any ideas?\r\n\r\ncc @kevinlewi for visibility, too.",
+          "createdAt": "2021-02-15T18:57:41Z",
+          "updatedAt": "2021-02-15T18:57:41Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The idea is to compute prk exactly as it is done now with a single OPRF computation and derive from it an additional key for decrypting the envelope.  Once the envelope is decrypted, the processing is the same (same keys derived from prk as currently done). Do you a reason this would not work or that you need a separate run of the OPRF?\r\nBtw, this covers a kind of second-order user enumeration threat. I was not sure it would be needed but if we specify it, it should be optional, not the main mechanism, I think.",
+          "createdAt": "2021-02-15T21:19:18Z",
+          "updatedAt": "2021-02-15T21:19:18Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Your comment seems to apply to the first type of enumeration attack listed in the appendix, which does not require client changes. I don't see much value in preventing this alone when the other type of enumeration exists, which is why I focused on the variant that requires client changes. ",
+          "createdAt": "2021-02-15T21:22:12Z",
+          "updatedAt": "2021-02-15T21:22:12Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "My comments refer to the second type. The first one only requires allowing that all contents of the envelope be encrypted but no change on client processing. The second type is the one that needs an additional layer of encryption with an additional key derivation from prk. Makes sense?",
+          "createdAt": "2021-02-15T21:38:52Z",
+          "updatedAt": "2021-02-15T21:38:52Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I'm confused then. There are two OPRF evaluations described in the appendix: F(derived_key, client_identity) and F(kU, client_password). Is that not right?",
+          "createdAt": "2021-02-15T21:42:17Z",
+          "updatedAt": "2021-02-15T21:42:17Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "You are confused and for a good reason. I used a terrible notation in that passage of the draft. I had kU and kU' notation for two very different things. The first was indeed an OPRF key but  the second was used as rwdU (or what's called prk now). So naturally, you thought of kU' as an OPRF key. In the current text this was translated into oprf_key and oprf_key'. However, if you change oprf_key' into something like prk' then you see how things make sense and that one OPRF key (and a single evaluation) suffices.  I'll be glad to clarify further if this is still confusing. Sorry for that.",
+          "createdAt": "2021-02-15T22:43:03Z",
+          "updatedAt": "2021-02-15T22:43:18Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Hmm, I understood that distinction. Here's what not clear to me: To simulate randomized CredentialResponses, the text proposes encrypting these under a key derived from OPRF(derived_key, client_indentity). However, there must *also* be some key derived from OPRF(kU, password) (as is essential to OPAQUE). (One can't just encrypt the envelope under a key derived from the first OPRF evaluation, as that completely skips the password.) \n\nAre these not two separate OPRF evaluations? If not, what am I missing?",
+          "createdAt": "2021-02-15T23:41:06Z",
+          "updatedAt": "2021-02-15T23:42:01Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "To address the attack in the first paragraph of Client Enumeration section (btw, should this be referred as user enumeration?), the server does the following. It holds a regular PRF key K (let's call the PRF by HMAC just to remove any confusion with OPRF). Upon receiving a pair (userid, blind) where userid does not exist in the server's database, S computes:\r\noprf_key=HMAC(K; userid | \"fake oprf key\") \r\nprk = HMAC(K; userid | \"fake prk\").\r\nThen, it builds an envelope using prk as the key and a string of all zeros as contents.encrypted_creds. In this case, however, we assume that ALL the envelope contents (including pkS) are encrypted. It sends this envelope to the client together with the OPRF response computed as blind^oprf_key.\r\n\r\nTo address the attack in the second paragraph, the server will need to derive oprf_key=HMAC(K; userid | \"oprf key\") even for its real users.\r\nIn addition, the protocol is changed as follows.\r\nAt registration, everything works the same except that an additional key outer_encrypt_key is derived from prk, and this key is stored at the server.  During online session, the server will take the envelope (which will be computed at registration exactly as currently done and stored at the server) and will produce a *fresh* encryption of envelope (fresh = with fresh random IV) and send the encrypted envelope to the client. Everything else stays the same.\r\nAt the client, prk and all its derivatives are computed as done currently, but in addition, the key outer_encrypt_key is derived from prk. The client uses it to decrypt the encrypted envelope and then proceeds as usual with the recovered envelope. \r\n\r\nWith these modifications, the case where the the server receives a pair (userid,blind) for unknown userid, is handled as follows.\r\nThe server sets oprf_key=HMAC(K; userid | \"oprf key\")  (with the received, unknown userid), sets outer_encrypt_key = HMAC(K; userid | \"fake encrypt\"), and generates a fresh encryption using outer_encrypt_key of a string of all zeros (same length as a regular envelope). ",
+          "createdAt": "2021-02-16T00:31:27Z",
+          "updatedAt": "2021-02-16T00:31:27Z"
         }
       ]
     },
@@ -1945,7 +2001,7 @@
       "labels": [],
       "body": "in the source there's a commented out part `## Envelope considerations` which mentions that not even `skU` needs to be included in the credentials wrapped in the envelope, instead skU can be derived from `rwd`. there's a note that this part should be \"brought back after updating\". if this is indeed the case, do not forget to change \r\n> Applications MUST include skU in secret_credentials\r\nin the {#protocol-messages} section.",
       "createdAt": "2020-11-16T15:18:02Z",
-      "updatedAt": "2021-02-07T23:18:44Z",
+      "updatedAt": "2021-02-16T00:44:15Z",
       "closedAt": null,
       "comments": [
         {
@@ -2017,6 +2073,139 @@
           "body": "i understand that this would be a 3rd kind of envelope config, besides base and custom-identifier. but i'm still very much in favor of this.",
           "createdAt": "2021-02-03T22:03:24Z",
           "updatedAt": "2021-02-03T22:03:24Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@stef, @bytemare: would you be able to propose this new envelope as a PR?",
+          "createdAt": "2021-02-15T18:46:21Z",
+          "updatedAt": "2021-02-15T18:46:21Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "sure\r\n",
+          "createdAt": "2021-02-15T18:54:37Z",
+          "updatedAt": "2021-02-15T18:54:37Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "hmmm interesting, in this case there is no need for an envelope. which brings up the question if there is no envelope, should there be a mode-flag sent as AAD or will all of this be implicit and the HMAC verified over a virtual packet consisting of the modeflag, the nonce and the server pubkey? i assume we still want the nonce in there for the authentication of the mode and the server pubkey. or do we drop the whole envelope thing altogether? in the latter i guess the km[23] auth hmac would serve as a deterrent to partitioning oracles, right?",
+          "createdAt": "2021-02-15T20:32:23Z",
+          "updatedAt": "2021-02-15T20:32:23Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "yes, i remember. but this fragment is from a time, when the envelope was made up of a secret and a cleartext env part. in the current spec the cleartext is not part of the envelope anymore, only of the authentication tag calculation. how the client takes possession of the server pubkey is not specified anymore. it might be sent along by the server, or it might be pre-shared. but i guess the point is - if we stick with this, that we should still do an hmac over the server pubkey even in this case. and if we do, we might want to do this including a nonce. and if we send a nonce we can also send a mode flag. but the question is. if this is necessary at at all, or can all of this be skipped and the security of the protocol not be weakened by doing so.",
+          "createdAt": "2021-02-15T21:10:26Z",
+          "updatedAt": "2021-02-15T21:10:26Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "I'm sorry, it seems the Github app has some issues, my comments keep disappearing. Here is my original comment:\r\n\r\n# \r\n\r\nThe draft has the following comment\r\n\r\n> It is possible to dispense with encryption in the construction of envelope to\r\n> obtain a shorter envelope (resulting in less storage at the server and less\r\n> communication from server to client). The idea is to derive client_private_key from prk.\r\n> However, for cases where client_private_key is not a random string of a given length, we\r\n> define a more general procedure. Namely, what is derived from prk is a random\r\n> seed used as an input to a key generation procedure that generates the pair\r\n> (client_private_key, client_public_key). In this case, secret_credentials is empty and cleartext_credentials\r\n> contains server_public_key. The random key generation seed is defined as\r\n> HKDF-Expand(KdKey; info=\"KG seed\", L)\r\n> where L is the required seed length. We note that in this encryption-less\r\n> scheme, the authentication still needs to be random-key robust which HMAC\r\n> satisfies.\r\n\r\nThis is where my suggestion came from, reducing the envelope to only keep the nonce and authentication tag, so the client can verify before continuing the AKE.\r\n",
+          "createdAt": "2021-02-15T21:17:56Z",
+          "updatedAt": "2021-02-15T21:17:56Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "true, if the server pubkey is being sent along this could be a problem, but if the server pubkey is preshared somehow and authenticated out-of-band, like e.g. during registration then i guess not, but that also means (which in some cases is totally ok) that the client stores some \"state\" the server pubkey.\r\nbtw the clients long-term pubkey is being stored by the server upon registration, in a secured channel. so that cannot be replaced by an attacker.",
+          "createdAt": "2021-02-15T21:30:14Z",
+          "updatedAt": "2021-02-15T21:30:14Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Ok, I'm switching to a computer, this bug is really annoying, I'm terribly sorry.\r\n_(original message)_\r\n#\r\nIf it's possible to have no envelope at all and still keep the same level of security, that would be ideal (and I would love that!).\r\n\r\nThe 'client's trace' would be very loosely coupled, with the client not knowing if it got the right OPRF evaluation. On registration, the public key the client sends back to the server would not be authenticated.",
+          "createdAt": "2021-02-15T21:31:59Z",
+          "updatedAt": "2021-02-15T21:31:59Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "> On registration, the public key the client sends back to the server would not be authenticated.\r\n\r\niiuc registration requires a secured channel, like tls.",
+          "createdAt": "2021-02-15T21:39:56Z",
+          "updatedAt": "2021-02-15T21:39:56Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "the client can still verify using km[23] an authentication tag.",
+          "createdAt": "2021-02-15T21:40:34Z",
+          "updatedAt": "2021-02-15T21:40:34Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Since we have no encryption, is the nonce even necessary? We could do the following, but I'm not sure we'd loose a security property:\r\n```\r\nprk = HKDF-Extract(hardened, nil)\r\nskc, pkc = deriveKeyPair(prk)\r\nauthKey = HKDF-Expand(prk, \"AuthKey\", Nh)\r\nauthTag = hmac( authKey, pkc || pks )\r\nenvelope = authTag\r\n```\r\n\r\nIf we went _envelope-less_:\r\n\r\nIn the AKE, the client computes `ikm` using the `skc` and `pks` long-term values. So one can assume that this is sufficient to proof possession of the right AKE mac keys, and thus verify KE2-mac and produce KE3-mac.",
+          "createdAt": "2021-02-15T21:41:48Z",
+          "updatedAt": "2021-02-15T23:50:53Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "@chris-wood what do you think?\r\n\r\nIf we went _envelope-less_, would the AKE macs be sufficient proofs that the client derived the right key pair?",
+          "createdAt": "2021-02-15T21:51:35Z",
+          "updatedAt": "2021-02-15T21:51:35Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This minimization of the protocol reminds me of this[ joke](https://eartstohear.wordpress.com/2015/09/01/fresh-fish-sold-here-daily/) .\r\nInterestingly, your suggestion of getting rid of the whole envelope and building on the AKE authentication *may* work with 3DH (one would need to prove it). In the case of SIGMA, if enc_server_info is empty, the protocol breaks completely. It  allows for an offline dictionary attack after a single session with the attacker acting as man in the middle between server and client. \r\n\r\nHowever, I do not think that assuming the client has the server's public key would be the common case (indeed, one of the main advantages of PAKEs is that you do not assume PKI or any form of trusted server's public key). In this case, the server sends its public key  to the client which must be authenticated by the client. This will require an HMAC computed on pkU. So deriving skU directly from prk would not obviate the envelope, it will be the same as now except for contents.encrypted_creds being empty (hence also pseudorandom_pad being omitted).  \r\n",
+          "createdAt": "2021-02-15T22:27:01Z",
+          "updatedAt": "2021-02-15T22:28:36Z"
+        },
+        {
+          "author": "stef",
+          "authorAssociation": "NONE",
+          "body": "true, my whole context is 3dh.\r\nhowever the last time i checked (since there is a lot changing still all the time i might be very wrong) the specification removed the part formerly known as \"cleartext envelope\", and left it unspecified how the pkS and optionally the id[US] are being recieved/stored/etc by the client. the only part afais that is specified is how to calculate the mac over the envelope and use the pkS/id[SU] as aad. so it leaves the door open for storing this info in the client. for example i can easily imagine a setup where the client is a javascript implementation provided by the server via https containing already the pkS hardcoded in the js. the current specification leaves that open to the implementation. if this is not something that is desired we should say so in the spec i guess.",
+          "createdAt": "2021-02-15T22:37:06Z",
+          "updatedAt": "2021-02-15T22:37:06Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think that you can find scenarios where you'll have pkS cached or hardwired into the client (e.g., an app in your phone that you download from the apple store). I would not \"prohibit\" such configuration but I also don't want to build on it as a common case. ",
+          "createdAt": "2021-02-15T22:47:26Z",
+          "updatedAt": "2021-02-15T22:47:26Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "I confirm, this suggestion is thought in the 3DH setup, as the document is now focused on 3DH.\r\n\r\nI can agree that this situation may look like the joke you're thinking about, but I hope you're not taking any offense that we're making these suggestions that _make sense_. You're the expert here, you know best :)\r\n\r\nRegarding the server key caching, building OPAQUE on it would indeed go against the very usefulness of aPAKEs, like you already mentioned in other comments. But it would be very useful to store the public key as a configuration parameter like the others (group and hash identifiers, etc.)\r\n\r\nIn the case we keep the envelope, would the nonce still be necessary, and the authentication tag suffice?",
+          "createdAt": "2021-02-15T22:52:20Z",
+          "updatedAt": "2021-02-15T22:52:20Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "`I can agree that this situation may look like the joke you're thinking about, but I hope you're not taking any offense `\r\n\r\nNot at all! No offense. To the contrary, these are good and non trivial  questions. They are welcome.",
+          "createdAt": "2021-02-15T23:37:02Z",
+          "updatedAt": "2021-02-15T23:37:02Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "`In the case we keep the envelope, would the nonce still be necessary, and the authentication tag suffice?`\r\n\r\nIf you cache pkS (and assume it is authentic) and derive skU from prk, then it would seem that just applying HMAC to a fixed string (under auth_key) would suffice. Not sure if there is a use for the nonce in this case. If you really want to specify something like this in this document, I would need to think more about it.",
+          "createdAt": "2021-02-15T23:43:57Z",
+          "updatedAt": "2021-02-15T23:43:57Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "I was more thinking about the regular case, where we don't cache anything, and the user only knows their password. \r\n\r\nLike in this previous comment\r\n\r\n> Since we have no encryption, is the nonce even necessary? We could do the following, but I'm not sure we'd loose a security property:\r\n> ```prk = HKDF-Extract(hardened, nil)\r\n> skc, pkc = deriveKeyPair(prk)\r\n> authKey = HKDF-Expand(prk, \"AuthKey\", Nh)\r\n> authTag = hmac( authKey, pkc || pks )\r\n> envelope = authTag",
+          "createdAt": "2021-02-15T23:49:45Z",
+          "updatedAt": "2021-02-15T23:51:01Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> skc, pkc = deriveKeyPair(prk)\r\n> authKey = HKDF-Expand(prk, \"AuthKey\", Nh)\r\n> authTag = hmac( authKey, pkc || pks )\r\n> envelope = authTag\r\n\r\nIt should be: \r\nskc, [pkc] = deriveKeyPair(prk)\r\nauthKey = HKDF-Expand(prk, \"AuthKey\", Nh)\r\nauthTag = hmac( authKey, pks )\r\nenvelope = (pks, authTag)\r\n\r\nHere pkc is recomputed  from prk only if needed by the client (none of the protocols we consider need that and for the case of elliptic curve keys, computing pkc costs an exponentiation, so no need to compute if not essential) and it does not need to be authenticated under hmac.  \r\npks does need to be transported in the envelope.\r\nIt could be omitted if it is assumed that the client has it. Even in this case it would be ood to send authTag so the client can check if the stored pks is authentic.\r\n\r\n\r\n",
+          "createdAt": "2021-02-16T00:44:15Z",
+          "updatedAt": "2021-02-16T00:44:15Z"
         }
       ]
     },
@@ -2637,7 +2826,7 @@
       "labels": [],
       "body": "The 3DH transcript used in the key schedule [currently includes only the nonces and identity](https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html#section-4.2.2.2). This means the contents of info1, info2, and the core OPAQUE messages are not mixed into encryption or MAC keys, which seems less than idea. They are included in the transcript that is covered by the MAC, but I don't see why wouldn't *also* include them in the key schedule. \r\n\r\n@hugokraw, can this be improved?",
       "createdAt": "2021-01-08T03:37:18Z",
-      "updatedAt": "2021-02-06T00:00:38Z",
+      "updatedAt": "2021-02-15T04:45:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -2653,6 +2842,48 @@
           "body": "Can we close this issue? @chris-wood ",
           "createdAt": "2021-02-02T00:56:14Z",
           "updatedAt": "2021-02-02T00:56:14Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I don't think so. It's quite inconsistent that the transcript used for key confirmation is not that which is used for key derivation. We should unify these two, as has been done in TLS 1.3. I'll use this issue to track that.",
+          "createdAt": "2021-02-14T21:45:46Z",
+          "updatedAt": "2021-02-14T21:45:46Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Session id's (nonces in this case) and identities is all you need as input to the key derivation. As I answered before, I am ok with adding transcript to the derivation mainly to avoid these questions, but it does not have a real cryptographic function once you authenticate the transcript during the handshake. If you add the transcript you may remove the nonces from info as they are part of the transcript, but you need to keep the identities (in addition to the transcript) which may not be part of the transcript.  ",
+          "createdAt": "2021-02-14T22:14:30Z",
+          "updatedAt": "2021-02-14T22:14:30Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Right, I understand that these are necessary, but it's awkward (from a protocol perspective) to omit everything else that's actually sent over the wire. We should follow best practice here, which is to fold as much into the transcript and key schedule as possible.",
+          "createdAt": "2021-02-14T22:27:11Z",
+          "updatedAt": "2021-02-14T22:27:11Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Where is the elegance of simplicity? Ok. Add the transcript but keep the identities as explicit entries, in addition to the transcript.",
+          "createdAt": "2021-02-15T04:35:45Z",
+          "updatedAt": "2021-02-15T04:35:45Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "My claim is that it's less elegant as-is. The proposal allows clients and servers to only keep a running hash that includes the identifies and transcript processed so far. In contrast, the current text requires endpoints to do special processing of the KE messages to extract the nonces. It's more complex in practice.",
+          "createdAt": "2021-02-15T04:38:52Z",
+          "updatedAt": "2021-02-15T04:38:52Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I agree with this. Elegance and aestethics are contextual and in the eye of the beholder. And, you are right, the running hash is the right way to go. When all the fog of these changes dissipates, I'll have to take a comprehensive look at the specification. Right now, I see parts and pieces and not the whole picture. ",
+          "createdAt": "2021-02-15T04:45:26Z",
+          "updatedAt": "2021-02-15T04:45:26Z"
         }
       ]
     },
@@ -3392,7 +3623,7 @@
       "labels": [],
       "body": "We should ensure that we acknowledge this type of attack in theory, and describe how OPAQUE deals with it. In particular, since each OPRF key is per-user, which means that any reduction in security is per-user, which is unlikely to be a problem in practice.",
       "createdAt": "2021-02-01T15:39:48Z",
-      "updatedAt": "2021-02-06T00:00:38Z",
+      "updatedAt": "2021-02-15T13:59:23Z",
       "closedAt": null,
       "comments": [
         {
@@ -3401,6 +3632,27 @@
           "body": "There is text in the security considerations section about this but it contains an error: A later paper by Cheon shows that one does not need the exponential memory. Also, we need to provide a reference to Taylor Campbel's comprehensive note on this. It is also worth noting Loup Vaillant observation on communication time (with the OPRF server), lower bounded by speed of light, given that this attack is inherently sequential. Maybe you will summarize these things in the OPRF draft and then we only refer to the fact that in OPAQUE kU is per user so this (anyway infeasible) attack would be directed to enable a dictionary attack against a single user.",
           "createdAt": "2021-02-01T19:52:32Z",
           "updatedAt": "2021-02-01T19:52:32Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "After reviewing this again, I'm inclined to remove most of the text in this section and simply delegate it to the OPRF draft. Would the following work, @hugokraw?\r\n\r\n```\r\nWhile one can expect the practical security of the OPRF function\r\n(namely, the hardness of computing the function without knowing the\r\nkey) to be in the order of computing discrete logarithms or solving\r\nDiffie-Hellman, Brown and Gallant {{BG04}} and Cheon {{Cheon06}} show an\r\nattack that slightly improves on generic attacks. However, in this case of OPAQUE,\r\nthese attacks are not practical as the number of queries translates to an equal \r\nnumber of failed authentication attempts by a single client. Therefore, the amount\r\nof work required of an attacker scales linearly with the number of target clients.\r\n```",
+          "createdAt": "2021-02-14T22:56:51Z",
+          "updatedAt": "2021-02-14T22:56:51Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "A bit edited:\r\nWhile one can expect the practical security of the OPRF function (namely, the hardness of computing the function without knowing the key) to be in the order of computing discrete logarithms or solving Diffie-Hellman, Brown and Gallant {{BG04}} and Cheon {{Cheon06}} show an attack that slightly improves on generic attacks.  For typical curves, the attack requires an infeasible number of calls to the OPRF and/or results in insignificant security loss (see oprf-rfc). For OPAQUE, these attacks are particularly impractical as they translate into an infeasible number of failed authentication attempts directed at individual users. \r\n\r\n(Note: It is true that the attack scales linearly  with the number of target users, but writing it that way it feels like a feasible attack. After all scaling linearly in the number of users is not a terrible limitation of attacks. The point here is that even for a single user it is totally infeasible;  while\"just being linear\" may obscure that fact. )",
+          "createdAt": "2021-02-15T05:09:59Z",
+          "updatedAt": "2021-02-15T05:09:59Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Perfect! PR incoming.",
+          "createdAt": "2021-02-15T13:59:22Z",
+          "updatedAt": "2021-02-15T13:59:22Z"
         }
       ]
     },
@@ -3612,16 +3864,24 @@
       "id": "MDU6SXNzdWU4MDc4MzIzOTk=",
       "title": "Inconsistency between OPRF ciphersuites in draft-irtf-cfrg-voprf and draft-irtf-cfrg-opaque",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/146",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rot256",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "draft-irtf-cfrg-voprf lists the following OPRF  instanciations:\r\n\r\n\r\n  OPRF(ristretto255, **SHA-256**)\r\n  OPRF(decaf448, SHA-512) \r\n  OPRF(P-256, SHA-256)\r\n  OPRF(P-384, SHA-512)\r\n  OPRF(P-521, SHA-512)\r\n\r\nHowever section 5 of draft-irtf-cfrg-opaque, says:\r\n\r\n\r\n   An OPAQUE configuration is a tuple (OPRF, Hash, MHF, EnvelopeMode).\r\n   The OPAQUE OPRF protocol is drawn from the \"base mode\" variant of\r\n   [I-D.irtf-cfrg-voprf].  The following OPRF ciphersuites are\r\n   supported:\r\n\r\n   *  OPRF(ristretto255, **SHA-512**)\r\n   *  OPRF(decaf448, SHA-512)\r\n   *  OPRF(P-256, SHA-256)\r\n   *  OPRF(P-384, SHA-512)\r\n   *  OPRF(P-521, SHA-512)\r\n\r\nIt seems like it should be SHA-256 in both places (targeting 128-bits of security)?",
       "createdAt": "2021-02-13T21:25:17Z",
-      "updatedAt": "2021-02-13T21:25:40Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2021-02-14T21:32:09Z",
+      "closedAt": "2021-02-14T21:32:09Z",
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The [editor's copy](https://cfrg.github.io/draft-irtf-cfrg-voprf/draft-irtf-cfrg-voprf.html#name-oprfristretto255-sha-512) of draft-irtf-cfrg-voprf uses OPRF(ristretto255, SHA-512), which is why OPAQUE uses it. We chose SHA-512 because implementations using ristretto255 are more likely to also have a SHA-512 implementation (due to Ed25519 requiring SHA-512). See [this PR](https://github.com/cfrg/draft-irtf-cfrg-voprf/pull/203) and related issue(s).",
+          "createdAt": "2021-02-14T21:32:09Z",
+          "updatedAt": "2021-02-14T21:32:09Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -8819,7 +9079,7 @@
       "labels": [],
       "body": "Gets rid of the variable-length encoding of the client/server public/private keys, and restricts them to be of a fixed length (denoted by the parameter `Nk`). Note that `Nk` is a parameter that must be specified for each AKE instantiation -- this gives the flexibility of future AKE instantiations that are PQ to use a larger `Nk` if necessary.\r\n\r\nQuestion: should we have an Nsk and Npk, since the size of the private and public keys may not necessarily be the same?\r\n\r\n\r\nCloses #121 and #132 ",
       "createdAt": "2021-02-10T10:48:57Z",
-      "updatedAt": "2021-02-10T10:48:57Z",
+      "updatedAt": "2021-02-15T18:43:43Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
@@ -8893,7 +9153,7 @@
       "labels": [],
       "body": "In opaque_ake.sage drop pre-hashing and carry only the transcript in the state + minor renaming to avoid confusion.\r\n\r\nSome typo fixing in the draft and suggestions for wording.\r\n\r\ncc @chris-wood",
       "createdAt": "2021-02-13T18:50:06Z",
-      "updatedAt": "2021-02-14T00:43:18Z",
+      "updatedAt": "2021-02-14T00:46:28Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
@@ -8964,9 +9224,9 @@
         {
           "author": "bytemare",
           "authorAssociation": "NONE",
-          "body": "Actually, the server can compute the client_mac at KE2 as well. It doesn't actually need to preserve anything except the client_mac.\r\n\r\nSo the server does all its signing in KE2, the client all its signing in KE3, none need to carry any trace of transcript2 and transcripts. Hence, no pre-hashing needed.",
+          "body": "Actually, the server can compute the client_mac at KE2 as well. It doesn't actually need to preserve anything except the client_mac.\r\n\r\nSo the server does all its signing in KE2, the client all its signing in KE3, none need to carry any trace of transcript2 and transcript3. Hence, no pre-hashing needed.",
           "createdAt": "2021-02-14T00:40:33Z",
-          "updatedAt": "2021-02-14T00:40:33Z"
+          "updatedAt": "2021-02-14T00:46:28Z"
         },
         {
           "author": "stef",
@@ -8976,6 +9236,121 @@
           "updatedAt": "2021-02-14T00:43:18Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 147,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTczMTY4Mzc5",
+      "title": "Unify key derivation and confirmation transcripts.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/147",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This change unifies the transcripts used across key derivation and confirmation. It allows clients and servers to keep a rolling hash of messages sent and received when running the protocol, thereby minimizing state. It also makes testing and implementation easier, as there are no longer two different transcripts which differ in context.\r\n\r\nCloses #108 and #142.\r\n\r\ncc @bytemare, @stef\r\n",
+      "createdAt": "2021-02-14T22:47:33Z",
+      "updatedAt": "2021-02-15T23:11:30Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/unify-transcripts",
+      "headRefOid": "a1451a88fa84b02efe2cc74978c9cd4499205412",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "That's very interesting, well spotted!\r\nBut do you hash in `hmac` because you already hash for `info` ?",
+          "createdAt": "2021-02-15T13:36:53Z",
+          "updatedAt": "2021-02-15T13:38:08Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> But do you hash in hmac because you already hash for info ?\r\n\r\nI'm not sure I understand this question \ud83e\udd14 ",
+          "createdAt": "2021-02-15T18:05:28Z",
+          "updatedAt": "2021-02-15T18:05:28Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "If I'm not mistaken, `hmac()` doesn't need its input to be hashed beforeheand. Please correct me if I'm wrong.\r\n\r\nHere, you build upon the running hash used for `info` and use this state for `hmac()`. `info` needs to hash, so reusing this existing state is beneficial. My question is whether you hash the transcript for `hmac()` so you can use/piggyback on `info`'s running hash.",
+          "createdAt": "2021-02-15T23:11:30Z",
+          "updatedAt": "2021-02-15T23:11:30Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkwNDkwNTA4",
+          "commit": {
+            "abbreviatedOid": "a1451a8"
+          },
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-02-15T13:47:42Z",
+          "updatedAt": "2021-02-15T17:36:06Z",
+          "comments": [
+            {
+              "originalPosition": 61,
+              "body": "Maybe we should call the suffix something else than `transcript`, when it's only `mac` or `einfo + mac`, as it can be confusing.",
+              "createdAt": "2021-02-15T13:47:42Z",
+              "updatedAt": "2021-02-15T17:36:06Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkwNjgwNzk5",
+          "commit": {
+            "abbreviatedOid": "a1451a8"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-02-15T18:05:49Z",
+          "updatedAt": "2021-02-15T18:05:50Z",
+          "comments": [
+            {
+              "originalPosition": 61,
+              "body": "`suffix` would be a fine name for this, I think?",
+              "createdAt": "2021-02-15T18:05:49Z",
+              "updatedAt": "2021-02-15T18:05:50Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 148,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTczNTg0NTQ1",
+      "title": "Simplify static DH text.",
+      "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/148",
+      "state": "OPEN",
+      "author": "chris-wood",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #131.",
+      "createdAt": "2021-02-15T14:01:38Z",
+      "updatedAt": "2021-02-15T14:01:38Z",
+      "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "baseRefName": "master",
+      "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
+      "headRepository": "cfrg/draft-irtf-cfrg-opaque",
+      "headRefName": "caw/static-dh",
+      "headRefOid": "78809ec371fea2056c226723732ce223d8ca1b63",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
