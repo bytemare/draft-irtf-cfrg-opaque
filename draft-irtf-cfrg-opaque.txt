@@ -5,10 +5,10 @@
 Network Working Group                                        H. Krawczyk
 Internet-Draft                                       Algorand Foundation
 Intended status: Informational                                   K. Lewi
-Expires: 17 August 2021                                    Novi Research
+Expires: 21 August 2021                                    Novi Research
                                                                C.A. Wood
                                                               Cloudflare
-                                                        13 February 2021
+                                                        17 February 2021
 
 
                   The OPAQUE Asymmetric PAKE Protocol
@@ -47,7 +47,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 17 August 2021.
+   This Internet-Draft will expire on 21 August 2021.
 
 Copyright Notice
 
@@ -1086,29 +1086,12 @@ Steps:
    (namely, the hardness of computing the function without knowing the
    key) to be in the order of computing discrete logarithms or solving
    Diffie-Hellman, Brown and Gallant [BG04] and Cheon [Cheon06] show an
-   attack that slightly improves on generic attacks.  For the case that
-   q-1 or q+1, where q is the order of the group G, has a t-bit divisor,
-   they show an attack that calls the OPRF on 2^t chosen inputs and
-   reduces security by t/2 bits, i.e., it can find the OPRF key in time
-   2^{q/2-t/2} and 2^{q/2-t/2} memory.  For typical curves, the attack
-   requires an infeasible number of calls and/or results in
-   insignificant security loss (*).  Moreover, in the OPAQUE
-   application, these attacks are completely impractical as the number
-   of calls to the function translates to an equal number of failed
-   authentication attempts by a _single_ client.  For example, one would
-   need a billion impersonation attempts to reduce security by 15 bits
-   and a trillion to reduce it by 20 bits - and most curves will not
-   even allow for such attacks in the first place (note that this
-   theoretical loss of security is with respect to computing discrete
-   logarithms, not in reducing the password strength).
-
-   (*) Some examples (courtesy of Dan Brown): For P-384, 2^90 calls
-   reduce security from 192 to 147 bits; for NIST P-256 the options are
-   6-bit reduction with 2153 OPRF calls, about 14 bit reduction with 187
-   million calls and 20 bits with a trillion calls.  For Curve25519,
-   attacks are completely infeasible (require over 2^100 calls) but its
-   twist form allows an attack with 25759 calls that reduces security by
-   7 bits and one with 117223 calls that reduces security by 8.4 bits.
+   attack that slightly improves on generic attacks.  For typical
+   curves, the attack requires an infeasible number of calls to the OPRF
+   or results in insignificant security loss; see [I-D.irtf-cfrg-voprf]
+   for more information.  For OPAQUE, these attacks are particularly
+   impractical as they translate into an infeasible number of failed
+   authentication attempts directed at individual users.
 
 6.6.  Input Validation
 
@@ -1265,30 +1248,30 @@ Steps:
               Josefsson, "The memory-hard Argon2 password hash and
               proof-of-work function", Work in Progress, Internet-Draft,
               draft-irtf-cfrg-argon2-12, 8 September 2020,
-              <http://www.ietf.org/internet-drafts/draft-irtf-cfrg-
+              <https://www.ietf.org/archive/id/draft-irtf-cfrg-
               argon2-12.txt>.
 
    [I-D.irtf-cfrg-hash-to-curve]
-              Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R., and
-              C. Wood, "Hashing to Elliptic Curves", Work in Progress,
-              Internet-Draft, draft-irtf-cfrg-hash-to-curve-10, 11
-              October 2020, <http://www.ietf.org/internet-drafts/draft-
-              irtf-cfrg-hash-to-curve-10.txt>.
+              Faz-Hernandez, A., Scott, S., Sullivan, N., Wahby, R. S.,
+              and C. A. Wood, "Hashing to Elliptic Curves", Work in
+              Progress, Internet-Draft, draft-irtf-cfrg-hash-to-curve-
+              10, 11 October 2020, <https://www.ietf.org/archive/id/
+              draft-irtf-cfrg-hash-to-curve-10.txt>.
 
    [I-D.irtf-cfrg-voprf]
-              Davidson, A., Faz-Hernandez, A., Sullivan, N., and C.
+              Davidson, A., Faz-Hernandez, A., Sullivan, N., and C. A.
               Wood, "Oblivious Pseudorandom Functions (OPRFs) using
               Prime-Order Groups", Work in Progress, Internet-Draft,
               draft-irtf-cfrg-voprf-05, 2 November 2020,
-              <http://www.ietf.org/internet-drafts/draft-irtf-cfrg-
-              voprf-05.txt>.
+              <https://www.ietf.org/archive/id/draft-irtf-cfrg-voprf-
+              05.txt>.
 
    [I-D.sullivan-tls-opaque]
               Sullivan, N., Krawczyk, H., Friel, O., and R. Barnes,
               "Usage of OPAQUE with TLS 1.3", Work in Progress,
               Internet-Draft, draft-sullivan-tls-opaque-00, 11 March
-              2019, <http://www.ietf.org/internet-drafts/draft-sullivan-
-              tls-opaque-00.txt>.
+              2019, <https://www.ietf.org/archive/id/draft-sullivan-tls-
+              opaque-00.txt>.
 
    [JKKX16]   Jarecki, S., Kiayias, A., Krawczyk, H., and J. Xu,
               "Highly-efficient and composable password-protected secret
