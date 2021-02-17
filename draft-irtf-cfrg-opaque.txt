@@ -309,6 +309,14 @@ Table of Contents
 
       -  Nh: The output size of the Hash function.
 
+   *  Authenticated Key Exchange (AKE, Section 4.2):
+
+      -  Npk: The size of the public keys used for the key exchange
+         protocol
+
+      -  Nsk: The size of the private keys used for the key exchange
+         protocol
+
    *  Memory Hard Function (MHF):
 
       -  Harden(msg, params): Repeatedly apply a memory hard function
@@ -400,22 +408,22 @@ Table of Contents
    "CleartextCredentials" as follows:
 
    struct {
-     opaque client_private_key<1..2^16-1>;
+     opaque client_private_key[Nsk];
    } SecretCredentials;
 
    struct {
-     opaque server_public_key<1..2^16-1>;
+     opaque server_public_key[Npk];
    } CleartextCredentials;
 
    The "custom_identifier" mode defines "SecretCredentials" and
    "CleartextCredentials" as follows:
 
    struct {
-     opaque client_private_key<1..2^16-1>;
+     opaque client_private_key[Nsk];
    } SecretCredentials;
 
    struct {
-     opaque server_public_key<1..2^16-1>;
+     opaque server_public_key[Npk];
      opaque client_identity<0..2^16-1>;
      opaque server_identity<0..2^16-1>;
    } CleartextCredentials;
@@ -426,7 +434,7 @@ Table of Contents
    struct {
      EnvelopeMode mode;
      opaque nonce[32];
-     opaque encrypted_creds<1..2^16-1>;
+     opaque encrypted_creds[Nsk];
    } InnerEnvelope;
 
    struct {
@@ -479,7 +487,7 @@ Table of Contents
 
    struct {
        SerializedElement data;
-       opaque server_public_key<1..2^16-1>;
+       opaque server_public_key[Npk];
    } RegistrationResponse;
 
    data  A serialized OPRF group element.
@@ -488,7 +496,7 @@ Table of Contents
       for the online authenticated key exchange stage.
 
    struct {
-       opaque client_public_key<1..2^16-1>;
+       opaque client_public_key[Npk];
        Envelope envelope;
    } RegistrationUpload;
 
@@ -593,7 +601,7 @@ Steps:
 
    struct {
        SerializedScalar oprf_key;
-       opaque client_public_key<1..2^16-1>;
+       opaque client_public_key[Npk];
        Envelope envelope;
    } credential_file;
 
@@ -650,7 +658,7 @@ Steps:
 
    struct {
        SerializedElement data;
-       opaque server_public_key<1..2^16-1>;
+       opaque server_public_key[Npk];
        Envelope envelope;
    } CredentialResponse;
 
@@ -761,6 +769,11 @@ Steps:
    respectively, for binding between the underlying OPRF protocol
    messages and the KE session.
 
+   We use the parameters Npk and Nsk to denote the size of the public
+   and private keys used in the AKE instantation.  Npk and Nsk must
+   adhere to the output size limitations of the HKDF Expand function
+   from [RFC5869], which means that Npk, Nsk <= 255 * Nh.
+
    The rest of this section includes key schedule utility functions used
    by OPAQUE-3DH, and then provides a detailed specification for OPAQUE-
    3DH, including its wire format messages.
@@ -795,6 +808,9 @@ Steps:
    performed in this group and represented here using multiplicative
    notation.  The output of OPAQUE-3DH is a session secret "session_key"
    and export key "export_key".
+
+   The parameters Npk and Nsk are set to be equal to the size of a
+   scalar in the associated prime order group.
 
 4.2.2.1.  OPAQUE-3DH Messages
 
@@ -1363,7 +1379,13 @@ Appendix B.  Alternate AKE Instantiations
    schedule.  SIGMA-I uses digital signatures rather than static DH keys
    for authentication.  Specification of these instantiations is left to
    future documents.  A sketch of how these instantiations might change
-   is included below for posterity.
+   is included in the next subsection for posterity.
+
+   The AKE private key size (Nsk) is limited to the output size of the
+   HKDF Expand function from [RFC5869].  Future specifications which
+   have keys exceeding this size should specify a mechanism by which
+   private keys and their corresponding public keys can be
+   deterministically derived from a fixed-length seed.
 
    OPAQUE may also be instantiated with any post-quantum (PQ) AKE
    protocol that has the message flow above and security properties (KCI
@@ -1449,6 +1471,9 @@ C.1.1.  Configuration
    OPRF: 0001
    SlowHash: Identity
    Hash: SHA512
+   Nh: 64
+   Npk: 32
+   Nsk: 32
 
 C.1.2.  Input Values
 
@@ -1555,6 +1580,9 @@ C.2.1.  Configuration
    OPRF: 0001
    SlowHash: Identity
    Hash: SHA512
+   Nh: 64
+   Npk: 32
+   Nsk: 32
 
 C.2.2.  Input Values
 
