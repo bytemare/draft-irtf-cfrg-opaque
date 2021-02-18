@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-02-16T00:44:59.973910+00:00",
+  "timestamp": "2021-02-18T00:50:53.494703+00:00",
   "repo": "cfrg/draft-irtf-cfrg-opaque",
   "labels": [
     {
@@ -378,7 +378,7 @@
       "labels": [],
       "body": "We might consider standardizing the mechanism by which servers prevent user enumeration attacks. ",
       "createdAt": "2020-05-28T12:29:17Z",
-      "updatedAt": "2021-02-16T00:31:27Z",
+      "updatedAt": "2021-02-16T01:02:31Z",
       "closedAt": null,
       "comments": [
         {
@@ -443,6 +443,20 @@
           "body": "To address the attack in the first paragraph of Client Enumeration section (btw, should this be referred as user enumeration?), the server does the following. It holds a regular PRF key K (let's call the PRF by HMAC just to remove any confusion with OPRF). Upon receiving a pair (userid, blind) where userid does not exist in the server's database, S computes:\r\noprf_key=HMAC(K; userid | \"fake oprf key\") \r\nprk = HMAC(K; userid | \"fake prk\").\r\nThen, it builds an envelope using prk as the key and a string of all zeros as contents.encrypted_creds. In this case, however, we assume that ALL the envelope contents (including pkS) are encrypted. It sends this envelope to the client together with the OPRF response computed as blind^oprf_key.\r\n\r\nTo address the attack in the second paragraph, the server will need to derive oprf_key=HMAC(K; userid | \"oprf key\") even for its real users.\r\nIn addition, the protocol is changed as follows.\r\nAt registration, everything works the same except that an additional key outer_encrypt_key is derived from prk, and this key is stored at the server.  During online session, the server will take the envelope (which will be computed at registration exactly as currently done and stored at the server) and will produce a *fresh* encryption of envelope (fresh = with fresh random IV) and send the encrypted envelope to the client. Everything else stays the same.\r\nAt the client, prk and all its derivatives are computed as done currently, but in addition, the key outer_encrypt_key is derived from prk. The client uses it to decrypt the encrypted envelope and then proceeds as usual with the recovered envelope. \r\n\r\nWith these modifications, the case where the the server receives a pair (userid,blind) for unknown userid, is handled as follows.\r\nThe server sets oprf_key=HMAC(K; userid | \"oprf key\")  (with the received, unknown userid), sets outer_encrypt_key = HMAC(K; userid | \"fake encrypt\"), and generates a fresh encryption using outer_encrypt_key of a string of all zeros (same length as a regular envelope). ",
           "createdAt": "2021-02-16T00:31:27Z",
           "updatedAt": "2021-02-16T00:31:27Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Okay, this is more clear now. This seems somewhat different from what's written currently. There is a technical blocker in that we don't have a deterministic API to generate OPRF keys from the output of a PRF. (The OPRF document currently only specifies a randomized KeyGen API, not a deterministic one.) Assuming we could work through that, we'd then need to define the randomized encryption algorithm for the response. Would the server just choose a random nonce and do XOR-based encryption per usual? Something else?\n\nThis seems doable, but it will require some invasive changes.",
+          "createdAt": "2021-02-16T00:45:09Z",
+          "updatedAt": "2021-02-16T00:45:09Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "You are right, you need to derive oprf_key deterministically from a PRF. This is easily adaptable from what you have in the OPRF document: Just output a random string of the size you need for the randomized KeyGen.  And yes, the randomized encryption can be done with a random nonce and and xor. No need for authentication.\r\n",
+          "createdAt": "2021-02-16T01:02:31Z",
+          "updatedAt": "2021-02-16T01:02:31Z"
         }
       ]
     },
@@ -2001,7 +2015,7 @@
       "labels": [],
       "body": "in the source there's a commented out part `## Envelope considerations` which mentions that not even `skU` needs to be included in the credentials wrapped in the envelope, instead skU can be derived from `rwd`. there's a note that this part should be \"brought back after updating\". if this is indeed the case, do not forget to change \r\n> Applications MUST include skU in secret_credentials\r\nin the {#protocol-messages} section.",
       "createdAt": "2020-11-16T15:18:02Z",
-      "updatedAt": "2021-02-16T00:44:15Z",
+      "updatedAt": "2021-02-16T01:01:11Z",
       "closedAt": null,
       "comments": [
         {
@@ -2206,6 +2220,20 @@
           "body": "> skc, pkc = deriveKeyPair(prk)\r\n> authKey = HKDF-Expand(prk, \"AuthKey\", Nh)\r\n> authTag = hmac( authKey, pkc || pks )\r\n> envelope = authTag\r\n\r\nIt should be: \r\nskc, [pkc] = deriveKeyPair(prk)\r\nauthKey = HKDF-Expand(prk, \"AuthKey\", Nh)\r\nauthTag = hmac( authKey, pks )\r\nenvelope = (pks, authTag)\r\n\r\nHere pkc is recomputed  from prk only if needed by the client (none of the protocols we consider need that and for the case of elliptic curve keys, computing pkc costs an exponentiation, so no need to compute if not essential) and it does not need to be authenticated under hmac.  \r\npks does need to be transported in the envelope.\r\nIt could be omitted if it is assumed that the client has it. Even in this case it would be ood to send authTag so the client can check if the stored pks is authentic.\r\n\r\n\r\n",
           "createdAt": "2021-02-16T00:44:15Z",
           "updatedAt": "2021-02-16T00:44:15Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Doesn't the server need the client's pkc? (i.e. with the envelope)",
+          "createdAt": "2021-02-16T00:49:25Z",
+          "updatedAt": "2021-02-16T00:56:20Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "I see. Only at registration, actually. During login, the client doesn't need its public key.",
+          "createdAt": "2021-02-16T00:58:35Z",
+          "updatedAt": "2021-02-16T01:01:11Z"
         }
       ]
     },
@@ -2817,7 +2845,7 @@
       "id": "MDU6SXNzdWU3ODE4MTcwMjQ=",
       "title": "3DH transcript is incomplete",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/108",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -2826,8 +2854,8 @@
       "labels": [],
       "body": "The 3DH transcript used in the key schedule [currently includes only the nonces and identity](https://cfrg.github.io/draft-irtf-cfrg-opaque/draft-irtf-cfrg-opaque.html#section-4.2.2.2). This means the contents of info1, info2, and the core OPAQUE messages are not mixed into encryption or MAC keys, which seems less than idea. They are included in the transcript that is covered by the MAC, but I don't see why wouldn't *also* include them in the key schedule. \r\n\r\n@hugokraw, can this be improved?",
       "createdAt": "2021-01-08T03:37:18Z",
-      "updatedAt": "2021-02-15T04:45:26Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-17T19:49:20Z",
+      "closedAt": "2021-02-17T19:49:20Z",
       "comments": [
         {
           "author": "hugokraw",
@@ -3450,7 +3478,7 @@
       "id": "MDU6SXNzdWU3OTE2NjUxMjc=",
       "title": "Change all occurrences of variable-length public/private keys to be fixed length?",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/121",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -3459,8 +3487,8 @@
       "labels": [],
       "body": "In the current version of the draft, there are occurrences such as:\r\n\r\n```\r\nstruct {\r\n    SerializedElement data;\r\n    opaque pkS<1..2^16-1>;\r\n} RegistrationResponse;\r\n```\r\n\r\n```\r\nstruct {\r\n    opaque pkU<1..2^16-1>;\r\n    Envelope envU;\r\n} RegistrationUpload;\r\n```\r\n\r\nShould we change these to instead say:\r\n```\r\n    opaque pkS[LK];\r\n```\r\n\r\nwhere `LK` is a fixed constant dependent on the group representation?\r\n\r\n@chris-wood ",
       "createdAt": "2021-01-22T03:24:18Z",
-      "updatedAt": "2021-02-09T05:48:07Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-17T21:51:35Z",
+      "closedAt": "2021-02-17T21:51:35Z",
       "comments": [
         {
           "author": "chris-wood",
@@ -3614,7 +3642,7 @@
       "id": "MDU6SXNzdWU3OTg0Njg1MjM=",
       "title": "Static DH oracle text",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/131",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -3623,8 +3651,8 @@
       "labels": [],
       "body": "We should ensure that we acknowledge this type of attack in theory, and describe how OPAQUE deals with it. In particular, since each OPRF key is per-user, which means that any reduction in security is per-user, which is unlikely to be a problem in practice.",
       "createdAt": "2021-02-01T15:39:48Z",
-      "updatedAt": "2021-02-15T13:59:23Z",
-      "closedAt": null,
+      "updatedAt": "2021-02-17T03:09:49Z",
+      "closedAt": "2021-02-17T03:09:49Z",
       "comments": [
         {
           "author": "hugokraw",
@@ -3670,7 +3698,7 @@
       "labels": [],
       "body": "RFC 5869 limits the output length of Expand to 255*HashLen, but the envelope ciphertext has a larger capacity. (In theory, HKDF can produce any number of bytes, but we should abide by the interface limitations.) ",
       "createdAt": "2021-02-01T17:13:19Z",
-      "updatedAt": "2021-02-09T18:12:06Z",
+      "updatedAt": "2021-02-17T22:20:18Z",
       "closedAt": null,
       "comments": [
         {
@@ -3791,6 +3819,48 @@
           "body": "Your solution does not address the real issue here which is the limit of 8160 bytes imposed by HKDF. To me it makes more sense to have this as a limit instead of asking to configure the exact number. The latter reduces flexibility that future applications may want to have without much gain.  But, as always, for decisions that do not have a significant security/cryptography implication, I delegate to you guys.",
           "createdAt": "2021-02-09T18:12:06Z",
           "updatedAt": "2021-02-09T18:12:06Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@hugokraw's [suggestion here](https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/141#issuecomment-780876330) should give us a way to specify a HKDF wrapper that avoids the length issue. I think the best thing is to just bake this into the spec, but underneath a new generic KDF interface. I'll work on a PR for this!",
+          "createdAt": "2021-02-17T21:50:34Z",
+          "updatedAt": "2021-02-17T21:50:34Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Do you think it is worth adding this additional level of abstraction? It is not very probable that this length issue will be encountered and a suggestion about this simple workaround should be enough, don't you think?",
+          "createdAt": "2021-02-17T21:55:30Z",
+          "updatedAt": "2021-02-17T21:55:30Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "PS: As you see, after preaching for generality, I am not recommending against it. You can't win...",
+          "createdAt": "2021-02-17T21:58:00Z",
+          "updatedAt": "2021-02-17T21:58:00Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The \"problem\" is that a suggestion isn't specific enough. The only ways forward I see are to say one of the following in the spec:\r\n\r\n1. If L < limit, don't do the workround. Else do the workaround. \r\n2. Always do the workaround, handling all L values.\r\n\r\nI'm suggesting we go with (2), since it makes things future proof and also removes this branch in code with very minimal overhead. ",
+          "createdAt": "2021-02-17T21:58:59Z",
+          "updatedAt": "2021-02-17T21:58:59Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "If you want to specify this then the truly clean way of doing it is to use HKDF to derive a seed to a PRG and apply a PRG that is not limited in output length. But this would require another primitive and its instantiation. Your suggestion is equivalent to specifying a way to use HKDF as an unbounded-length PRG. (These may be too academic remarks, feel free to go the best way engineering calls for.)",
+          "createdAt": "2021-02-17T22:07:41Z",
+          "updatedAt": "2021-02-17T22:07:41Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> If you want to specify this then the truly clean way of doing it is to use HKDF to derive a seed to a PRG and apply a PRG that is not limited in output length. But this would require another primitive and its instantiation. Your suggestion is equivalent to specifying a way to use HKDF as an unbounded-length PRG. \r\n\r\nYep, exactly! That's what I planned on doing. I'll try and prioritize a PR for this today. ",
+          "createdAt": "2021-02-17T22:20:18Z",
+          "updatedAt": "2021-02-17T22:20:18Z"
         }
       ]
     },
@@ -3817,16 +3887,24 @@
       "id": "MDU6SXNzdWU4MDU5NjQ5Mjk=",
       "title": "KE2 and KE3 transcript mac pre-hashing",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/issues/142",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "bytemare",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "In the poc, KE2 and KE3 have their transcript hashed before feeding it into the HMAC\r\n\r\nKE2 https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/opaque_ake.sage#L160\r\nKE3 https://github.com/cfrg/draft-irtf-cfrg-opaque/blob/master/poc/opaque_ake.sage#L207\r\n\r\nBut the draft doesn't mention these pre-hashing steps. This changes the HMAC output, thus don't conform with the design in the draft.\r\ncc @chris-wood and @kevinlewi",
       "createdAt": "2021-02-10T23:39:42Z",
-      "updatedAt": "2021-02-10T23:39:42Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2021-02-17T19:49:34Z",
+      "closedAt": "2021-02-17T19:49:34Z",
+      "comments": [
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Fixed in #147.",
+          "createdAt": "2021-02-17T19:49:34Z",
+          "updatedAt": "2021-02-17T19:49:34Z"
+        }
+      ]
     },
     {
       "number": 143,
@@ -8848,21 +8926,21 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTY3MTIzMzg4",
       "title": "Limiting opaque key types to 255 bytes",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/137",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Changes all opaque key types to be at most 255 bytes (instead of 2^16-1). Also changed encrypted_creds in the envelope to have the same restriction.\r\n\r\nNote: Still need to update the test vectors to match this new change.\r\n\r\nCloses #132 ",
       "createdAt": "2021-02-03T20:29:15Z",
-      "updatedAt": "2021-02-07T23:12:44Z",
+      "updatedAt": "2021-02-17T01:43:09Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "111b02c884ca967d6c78182dae08f7d83d4be7ae",
       "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
       "headRefName": "hkdf_limits",
       "headRefOid": "21e9d8b937f298d7693dfdf62342d19102f94a64",
-      "closedAt": null,
+      "closedAt": "2021-02-17T01:43:09Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -8880,6 +8958,13 @@
           "body": "Putting this in draft mode so that we can address #121 with this PR as well. I intend to add a new `Nk` parameter to denote the key size, which would be set in the configuration for the ciphersuite.",
           "createdAt": "2021-02-07T23:12:18Z",
           "updatedAt": "2021-02-07T23:12:44Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Closing in favor of #141 ",
+          "createdAt": "2021-02-17T01:43:08Z",
+          "updatedAt": "2021-02-17T01:43:08Z"
         }
       ],
       "reviews": []
@@ -9070,28 +9155,113 @@
     {
       "number": 141,
       "id": "MDExOlB1bGxSZXF1ZXN0NTcxMDA2MTk5",
-      "title": "Adding Nk parameter to fix public/private key sizes",
+      "title": "Adding Npk / Nsk parameter to fix public/private key sizes",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/141",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "kevinlewi",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
-      "body": "Gets rid of the variable-length encoding of the client/server public/private keys, and restricts them to be of a fixed length (denoted by the parameter `Nk`). Note that `Nk` is a parameter that must be specified for each AKE instantiation -- this gives the flexibility of future AKE instantiations that are PQ to use a larger `Nk` if necessary.\r\n\r\nQuestion: should we have an Nsk and Npk, since the size of the private and public keys may not necessarily be the same?\r\n\r\n\r\nCloses #121 and #132 ",
+      "body": "Gets rid of the variable-length encoding of the client/server public/private keys, and restricts them to be of a fixed length (denoted by the parameters `Npk` and `Nsk`). Note that `Npk` and `Nsk` are parameters that must be specified for each AKE instantiation -- this gives the flexibility of future AKE instantiations that are PQ to use a larger `Npk` / `Nsk` if necessary.\r\n\r\nCloses #121 and #132 ",
       "createdAt": "2021-02-10T10:48:57Z",
-      "updatedAt": "2021-02-15T18:43:43Z",
+      "updatedAt": "2021-02-17T21:51:35Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
-      "baseRefOid": "4c8321fdf18977af420c72c6d96c132b1970e3b4",
+      "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
       "headRepository": "kevinlewi/draft-irtf-cfrg-opaque",
       "headRefName": "adding_nk",
-      "headRefOid": "c7c1233bcba07fa5679489645f6caec34b236605",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "headRefOid": "238e956e2064ac5d7a5b43eca3a7c193cdd54366",
+      "closedAt": "2021-02-17T21:51:35Z",
+      "mergedAt": "2021-02-17T21:51:35Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "fb9c5f136ec310978040892b0cb392623f3d4773"
+      },
+      "comments": [
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "- Added Npk/Nsk instead of just Nk.\r\n- Added extra text to the Alternate AKEs section",
+          "createdAt": "2021-02-16T22:24:08Z",
+          "updatedAt": "2021-02-16T22:24:08Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Btw, @chris-wood  -- landing this will require an update to the test vectors. Should that be done in this change, or is it ok to land this first and expect that the test vectors will be updated in a later PR?",
+          "createdAt": "2021-02-16T23:27:20Z",
+          "updatedAt": "2021-02-16T23:27:20Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "We (I) can do it in a separate PR. Before we merge this, I'd like to hear from @hugokraw about the proposal. ",
+          "createdAt": "2021-02-16T23:30:29Z",
+          "updatedAt": "2021-02-16T23:30:29Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I am not sure how I feel about fixing the length of keys. I guess it would be defined as part of a ciphersuite (or something that looks like it). Note that different representations of the same curves may have different public key lengths.\r\n\r\nYeah, this is the idea. A configuration (ciphersuite) would fully identify the AKE, including the key(s) used.\r\n\r\n> That seems an overkill way of dealing with the HKDF limit of 255*hlen. A simpler mechanism is to expand HKDF-expand, e.g. via concatentation of Expand(prk, info1, L1) and Expand(prk, info2, L2), etc.\r\n\r\nWhile true, I'd prefer not to have HKDF-specific workarounds in the spec. If anything, I'd suggest we factor out HKDF to a generic KDF that does not have an input limitation. Either way, this particular issue seems orthogonal to the overall change here (moving to fixed-length keys). \r\n\r\nI suggest we land this PR, and then use #132 to track a fix to the input limit.",
+          "createdAt": "2021-02-17T19:53:59Z",
+          "updatedAt": "2021-02-17T19:53:59Z"
+        },
+        {
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I'd prefer not to have HKDF-specific workarounds in the spec.\r\n\r\nI was not suggesting to specify that workaround as part of the spec. I was mostly \"complaining\" about telling people to use what can be an involved procedure (full key generation from a seed) when there are simpler straightforward workarounds for the HKDF length issue.  If you are already suggesting some solutions, I suggest you mention this simpler option. \r\n\r\nJust for fun I was looking at what discussion I had with Pasi Eronen when writing the HKDF draft and I said \r\n\r\n`The other issue that I am not totally happy with is the counter in the calculation of T(i)'s. I agree that for typical IETF applications, namely, protocols where HKDF is used to derive shared keys, the 2^8*2^5 bytes of key material (assuming SHA-256) should suffice. But I see the definition of HKDF as serving other purposes, such as more general pseudo-random generation, where larger amounts of output bits may be required. Should we say that applications may decide to use HKDF with longer counters? Or should we suggest a way of \"re-keying\" the PRF as I indicated in my previous message to you?`\r\n\r\n(the \"serving other purposes\" is well exemplified here)\r\n\r\nPasi answered:\r\n\r\n`About the counter length: I suggest we leave it as-is for now. \r\n(BTW, an application that needs more than 8 KB could also call\r\nthe KDF several times with different \"info\" values).`\r\n\r\nThe eternal tension between generality and complexity. Personally, I agree that too much flexibility is not good. But limiting generality also has its price and these things need to be weighted carefully. What is useful is to provide advise on points that may be too limiting (e.g., I wish we had a remark about the hkdf length workaround)\r\n",
+          "createdAt": "2021-02-17T21:47:52Z",
+          "updatedAt": "2021-02-17T21:47:52Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yeah, I hear what you're saying :-) I moved this comment over to #132, where we can address this issue in a future-proof way! For now, I'm merging this change.",
+          "createdAt": "2021-02-17T21:51:28Z",
+          "updatedAt": "2021-02-17T21:51:28Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkwNjk0NjQ0",
+          "commit": {
+            "abbreviatedOid": "c7c1233"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM with some suggestions -- thanks!",
+          "createdAt": "2021-02-15T18:37:41Z",
+          "updatedAt": "2021-02-16T14:00:28Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "Are these always going to be the same size? (For 3DH, they will be, but perhaps not for others?)\r\n\r\n```suggestion\r\n  - Npk: The size of public keys used for the key exchange protocol.\r\n  - Nsk: The size of private keys used for the key exchange protocol.\r\n```",
+              "createdAt": "2021-02-15T18:37:42Z",
+              "updatedAt": "2021-02-16T23:09:25Z"
+            },
+            {
+              "originalPosition": 89,
+              "body": "Perhaps we should add some text to the \"alternate AKEs\" section elaborating on this point. Here's a suggestion:\r\n\r\n```\r\nThe AKE private key size (Nsk) is limited to the output size of the HKDF Expand function from {{RFC5869}}. \r\nFuture specifications which have keys exceeding this size should specify a mechanism by which private keys,\r\nand their corresponding public keys, can be deterministically derived from a fixed-length seed. \r\n```",
+              "createdAt": "2021-02-15T18:43:43Z",
+              "updatedAt": "2021-02-16T23:09:25Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkxODY1NDI5",
+          "commit": {
+            "abbreviatedOid": "238e956"
+          },
+          "author": "hugokraw",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "I am not sure how I feel about fixing the length of keys. I guess it would be defined as part of a ciphersuite (or something that looks like it). Note that different representations of the same curves may have different public key lengths.\r\n\r\nThis one I don't like:\r\n\r\n```\r\n Future specifications which have keys exceeding this size should specify a\r\n mechanism by which private keys and their corresponding public keys can be\r\n deterministically derived from a fixed-length seed.\r\n```\r\n\r\nThat seems an overkill way of dealing with the HKDF limit of 255*hlen. A simpler mechanism is to expand HKDF-expand, e.g. via concatentation of Expand(prk, info1, L1) and Expand(prk, info2, L2), etc.",
+          "createdAt": "2021-02-17T06:12:29Z",
+          "updatedAt": "2021-02-17T06:12:29Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 144,
@@ -9146,21 +9316,21 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTcyOTc3NzAw",
       "title": "Address #142 and minor suggestions to the draft",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/145",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "bytemare",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "In opaque_ake.sage drop pre-hashing and carry only the transcript in the state + minor renaming to avoid confusion.\r\n\r\nSome typo fixing in the draft and suggestions for wording.\r\n\r\ncc @chris-wood",
       "createdAt": "2021-02-13T18:50:06Z",
-      "updatedAt": "2021-02-14T00:46:28Z",
+      "updatedAt": "2021-02-17T20:33:26Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
       "headRepository": "bytemare/draft-irtf-cfrg-opaque",
       "headRefName": "master",
       "headRefOid": "681df8652f2e109a008884d54e252190bdb2b430",
-      "closedAt": null,
+      "closedAt": "2021-02-17T20:33:25Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -9234,6 +9404,20 @@
           "body": "indeed with the elimination of info3/einfo3 this makes sense.",
           "createdAt": "2021-02-14T00:43:18Z",
           "updatedAt": "2021-02-14T00:43:18Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@bytemare can we close this given that #147 landed?",
+          "createdAt": "2021-02-17T19:50:14Z",
+          "updatedAt": "2021-02-17T19:50:14Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Yes, of course.",
+          "createdAt": "2021-02-17T20:33:18Z",
+          "updatedAt": "2021-02-17T20:33:18Z"
         }
       ],
       "reviews": []
@@ -9243,24 +9427,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTczMTY4Mzc5",
       "title": "Unify key derivation and confirmation transcripts.",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/147",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "This change unifies the transcripts used across key derivation and confirmation. It allows clients and servers to keep a rolling hash of messages sent and received when running the protocol, thereby minimizing state. It also makes testing and implementation easier, as there are no longer two different transcripts which differ in context.\r\n\r\nCloses #108 and #142.\r\n\r\ncc @bytemare, @stef\r\n",
       "createdAt": "2021-02-14T22:47:33Z",
-      "updatedAt": "2021-02-15T23:11:30Z",
+      "updatedAt": "2021-02-17T19:49:21Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
       "headRepository": "cfrg/draft-irtf-cfrg-opaque",
       "headRefName": "caw/unify-transcripts",
-      "headRefOid": "a1451a88fa84b02efe2cc74978c9cd4499205412",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "ac007182b0793ed927444f1458d6f1e8c97885ef",
+      "closedAt": "2021-02-17T19:49:21Z",
+      "mergedAt": "2021-02-17T19:49:20Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "82a20bd788dd99d25eee2802111fc0317d44d63b"
+      },
       "comments": [
         {
           "author": "bytemare",
@@ -9282,6 +9468,41 @@
           "body": "If I'm not mistaken, `hmac()` doesn't need its input to be hashed beforeheand. Please correct me if I'm wrong.\r\n\r\nHere, you build upon the running hash used for `info` and use this state for `hmac()`. `info` needs to hash, so reusing this existing state is beneficial. My question is whether you hash the transcript for `hmac()` so you can use/piggyback on `info`'s running hash.",
           "createdAt": "2021-02-15T23:11:30Z",
           "updatedAt": "2021-02-15T23:11:30Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> If I'm not mistaken, hmac() doesn't need its input to be hashed beforeheand. Please correct me if I'm wrong.\r\n\r\nThat's right -- it doesn't. \r\n\r\n> Here, you build upon the running hash used for info and use this state for hmac(). info needs to hash, so reusing this existing state is beneficial. My question is whether you hash the transcript for hmac() so you can use/piggyback on info's running hash.\r\n\r\nI *think* I understand you (it would be helpful if you pointed to specific text). I did this because HMAC implementations always hash the input, which is treated as an opaque string. HMAC APIs don't allow one to \"pass in\" existing hash state, e.g., the running hash context for `info`. \r\n\r\nSo, yes, the hash is redundant, but it's there because of API limitations. Does that help clarify?",
+          "createdAt": "2021-02-16T14:16:24Z",
+          "updatedAt": "2021-02-16T14:16:24Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Yes, thank you :)",
+          "createdAt": "2021-02-17T01:39:52Z",
+          "updatedAt": "2021-02-17T01:39:52Z"
+        },
+        {
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "body": "Also, I tested and confirm the new vectors! ",
+          "createdAt": "2021-02-17T01:40:20Z",
+          "updatedAt": "2021-02-17T01:40:20Z"
+        },
+        {
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Great suggestions, @kevinlewi! I applied them. Please have another look?",
+          "createdAt": "2021-02-17T18:00:37Z",
+          "updatedAt": "2021-02-17T18:00:37Z"
+        },
+        {
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Looks great! Also verified the test vectors.",
+          "createdAt": "2021-02-17T19:44:44Z",
+          "updatedAt": "2021-02-17T19:44:44Z"
         }
       ],
       "reviews": [
@@ -9301,7 +9522,7 @@
               "originalPosition": 61,
               "body": "Maybe we should call the suffix something else than `transcript`, when it's only `mac` or `einfo + mac`, as it can be confusing.",
               "createdAt": "2021-02-15T13:47:42Z",
-              "updatedAt": "2021-02-15T17:36:06Z"
+              "updatedAt": "2021-02-17T18:05:27Z"
             }
           ]
         },
@@ -9321,9 +9542,114 @@
               "originalPosition": 61,
               "body": "`suffix` would be a fine name for this, I think?",
               "createdAt": "2021-02-15T18:05:49Z",
-              "updatedAt": "2021-02-15T18:05:50Z"
+              "updatedAt": "2021-02-17T18:05:27Z"
             }
           ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkxNzM0MDU0",
+          "commit": {
+            "abbreviatedOid": "a1451a8"
+          },
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-02-17T00:18:49Z",
+          "updatedAt": "2021-02-17T00:18:49Z",
+          "comments": [
+            {
+              "originalPosition": 61,
+              "body": "sounds good!",
+              "createdAt": "2021-02-17T00:18:49Z",
+              "updatedAt": "2021-02-17T18:05:27Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkxNzQyODcz",
+          "commit": {
+            "abbreviatedOid": "a1451a8"
+          },
+          "author": "bytemare",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-02-17T00:40:11Z",
+          "updatedAt": "2021-02-17T00:40:23Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "client_transcript **is**  KE1",
+              "createdAt": "2021-02-17T00:40:11Z",
+              "updatedAt": "2021-02-17T18:05:27Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkxODA1MTU5",
+          "commit": {
+            "abbreviatedOid": "a1451a8"
+          },
+          "author": "chris-wood",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-02-17T03:12:45Z",
+          "updatedAt": "2021-02-17T03:12:45Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "\ud83d\udc4d good catch",
+              "createdAt": "2021-02-17T03:12:45Z",
+              "updatedAt": "2021-02-17T18:05:27Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkxODQxNTIy",
+          "commit": {
+            "abbreviatedOid": "a1451a8"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Providing some initial suggestions after reading through the changes, which look reasonable to me.\r\n\r\nI would also like to try to implement this and see if the test vectors match, and also verify whether or not this is actually a simplification of the implementation, but thought it would be good to leave these suggestions here first. But no need to block on me completing the implementation portion.",
+          "createdAt": "2021-02-17T05:07:12Z",
+          "updatedAt": "2021-02-17T05:22:01Z",
+          "comments": [
+            {
+              "originalPosition": 35,
+              "body": "Can we rename this variable to `preamble` or something, instead of keeping it as `info`? It seems to be called `preamble` in the HMQV/SIGMA-I sections, and `info` is already an overloaded term here, since it could be confused with HKDF info, `client_info`, `enc_server_info `, etc. :) ",
+              "createdAt": "2021-02-17T05:07:12Z",
+              "updatedAt": "2021-02-17T18:05:27Z"
+            },
+            {
+              "originalPosition": 47,
+              "body": "The new `client_transcript` variable only appears twice. Can we just rename it as `KE1` in the two occurrences it appears in, rather than introducing a new variable?\r\n\r\nAlso, same thing with the `server_transcript` variable. I am wary of introducing all of these new terms that aren't accompanied by a struct definition. Perhaps we could abstract away the struct definition of `KE2` to denote an \"inner\" struct which captures these values that we want to represent as `server_transcript` here? So in other words, something like:\r\n\r\n```\r\nstruct {\r\n  CredentialResponse response;\r\n  uint8 server_nonce[32];\r\n  uint8 server_keyshare[Npk];\r\n} InnerKE2;\r\n\r\nstruct {\r\n  InnerKE2 inner_ke2;\r\n  opaque enc_server_info<0..2^16-1>;\r\n  uint8 mac[Nh];\r\n} KE2;\r\n```\r\n\r\nAnd then just use `InnerKe2` here instead of `server_transcript`.",
+              "createdAt": "2021-02-17T05:08:14Z",
+              "updatedAt": "2021-02-17T18:05:27Z"
+            },
+            {
+              "originalPosition": 61,
+              "body": "Agreed with not calling this `transcript`. Also, maybe the clarity of this could be improved, by explicitly writing out the computation of KE2.mac and KE2.mac in an equation form (similarly to how the `auth_tag` computation is written for the envelope):\r\n\r\n- `Ke2.mac = HMAC(Km2, concat(info, KE2.enc_server_info))`\r\n- `Ke3.mac = HMAC(Km3, concat(info, KE2.enc_server_info, KE2.mac))`\r\n\r\nThat way, you don't even need to introduce the `transcript` or `suffix` variable :) ",
+              "createdAt": "2021-02-17T05:18:49Z",
+              "updatedAt": "2021-02-17T18:05:27Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkyNTYxNDkx",
+          "commit": {
+            "abbreviatedOid": "ac00718"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-02-17T19:44:53Z",
+          "updatedAt": "2021-02-17T19:44:53Z",
+          "comments": []
         }
       ]
     },
@@ -9332,26 +9658,42 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTczNTg0NTQ1",
       "title": "Simplify static DH text.",
       "url": "https://github.com/cfrg/draft-irtf-cfrg-opaque/pull/148",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "chris-wood",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #131.",
       "createdAt": "2021-02-15T14:01:38Z",
-      "updatedAt": "2021-02-15T14:01:38Z",
+      "updatedAt": "2021-02-17T03:09:49Z",
       "baseRepository": "cfrg/draft-irtf-cfrg-opaque",
       "baseRefName": "master",
       "baseRefOid": "572f395c8c536694ed8efe35fa80db2b213cdefd",
       "headRepository": "cfrg/draft-irtf-cfrg-opaque",
       "headRefName": "caw/static-dh",
       "headRefOid": "78809ec371fea2056c226723732ce223d8ca1b63",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2021-02-17T03:09:49Z",
+      "mergedAt": "2021-02-17T03:09:49Z",
+      "mergedBy": "chris-wood",
+      "mergeCommit": {
+        "oid": "c7f6db0c1843db4fe11c050ff6049864fbd73691"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTkxNzczMDQy",
+          "commit": {
+            "abbreviatedOid": "78809ec"
+          },
+          "author": "kevinlewi",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM!",
+          "createdAt": "2021-02-17T01:42:48Z",
+          "updatedAt": "2021-02-17T01:42:48Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
