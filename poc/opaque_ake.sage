@@ -13,7 +13,7 @@ from collections import namedtuple
 try:
     from sagelib.opaque_common import derive_secret, hkdf_expand_label, hkdf_expand, hkdf_extract, I2OSP, OS2IP, OS2IP_le, random_bytes, xor, encode_vector, encode_vector_len, decode_vector, decode_vector_len, to_hex
     from sagelib.opaque_core import OPAQUECore
-    from sagelib.opaque_messages import deserialize_credential_request, deserialize_credential_response, envelope_mode_base, envelope_mode_custom_identifier
+    from sagelib.opaque_messages import deserialize_credential_request, deserialize_credential_response
 except ImportError as e:
     sys.exit("Error loading preprocessed sage files. Try running `make setup && make clean pyfiles`. Full error: " + e)
 
@@ -36,6 +36,10 @@ class Configuration(object):
         self.group = group
         self.Npk = group.element_byte_length()
         self.Nsk = group.scalar_byte_length()
+        self.Nm = mac.output_size()
+        self.Nx = hash().digest_size
+        self.Nok = oprf_suite.group.scalar_byte_length()
+        self.Nh = hash().digest_size
 
 class KeyExchange(object):
     def __init__(self):
@@ -70,6 +74,12 @@ class OPAQUE3DH(KeyExchange):
             "MAC": self.config.mac.name,
             "Hash": self.config.hash().name.upper(),
             "MHF": self.config.mhf.name,
+            "Nh": str(self.config.Nh),
+            "Npk": str(self.config.Npk),
+            "Nsk": str(self.config.Nsk),
+            "Nm": str(self.config.Nm),
+            "Nx": str(self.config.Nx),
+            "Nok": str(self.config.Nok),
         }
 
     def derive_3dh_keys(self, dh_components, info):
@@ -83,21 +93,21 @@ class OPAQUE3DH(KeyExchange):
         ikm = dh1_encoded + dh2_encoded + dh3_encoded
 
         prk = hkdf_extract(self.config, bytes([]), ikm)
-        handshake_secret = derive_secret(self.config, prk, _as_bytes("handshake secret"), info)
-        session_key = derive_secret(self.config, prk, _as_bytes("session secret"), info)
+        handshake_secret = derive_secret(self.config, prk, _as_bytes("HandshakeSecret"), info)
+        session_key = derive_secret(self.config, prk, _as_bytes("SessionKey"), info)
 
-        # client_mac_key = HKDF-Expand-Label(handshake_secret, "client mac", "", Hash.length)
-        # server_mac_key = HKDF-Expand-Label(handshake_secret, "server mac", "", Hash.length)
-        # handshake_encrypt_key = HKDF-Expand-Label(handshake_secret, "handshake enc", "", key_length)
+        # client_mac_key = HKDF-Expand-Label(handshake_secret, "ClientMAC", "", Hash.length)
+        # server_mac_key = HKDF-Expand-Label(handshake_secret, "ServerMAC", "", Hash.length)
+        # handshake_encrypt_key = HKDF-Expand-Label(handshake_secret, "HandshakeKey", "", key_length)
         Nh = self.config.hash().digest_size
         empty_info = bytes([])
-        server_mac_key = hkdf_expand_label(self.config, handshake_secret, _as_bytes("server mac"), empty_info, Nh)
-        client_mac_key = hkdf_expand_label(self.config, handshake_secret, _as_bytes("client mac"), empty_info, Nh)
-        handshake_encrypt_key = hkdf_expand_label(self.config, handshake_secret, _as_bytes("handshake enc"), empty_info, Nh)
+        server_mac_key = hkdf_expand_label(self.config, handshake_secret, _as_bytes("ServerMAC"), empty_info, Nh)
+        client_mac_key = hkdf_expand_label(self.config, handshake_secret, _as_bytes("ClientMAC"), empty_info, Nh)
+        handshake_encrypt_key = hkdf_expand_label(self.config, handshake_secret, _as_bytes("HandshakeKey"), empty_info, Nh)
 
         return server_mac_key, client_mac_key, handshake_encrypt_key, session_key, handshake_secret
 
-    def generate_ke1(self, pwdU, info1, idU, skU, pkU, idS, pkS):
+    def generate_ke1(self, pwdU, info1, idU, pkU, idS, pkS):
         cred_request, cred_metadata = self.core.create_credential_request(pwdU)
         serialized_request = cred_request.serialize()
 
@@ -109,7 +119,10 @@ class OPAQUE3DH(KeyExchange):
         # cred_request, nonceU, info1, epkU
         hasher = self.config.hash()
         hasher.update(_as_bytes("3DH"))
-        hasher.update(encode_vector_len(idU, 2))
+        if idU:
+            hasher.update(encode_vector_len(idU, 2))
+        else:
+            hasher.update(encode_vector_len(self.config.group.serialize(pkU), 2))
         hasher.update(serialized_request)
         hasher.update(nonceU)
         hasher.update(encode_vector(info1))
@@ -147,12 +160,18 @@ class OPAQUE3DH(KeyExchange):
 
         hasher = self.config.hash()
         hasher.update(_as_bytes("3DH"))
-        hasher.update(encode_vector_len(idU, 2))
+        if idU:
+            hasher.update(encode_vector_len(idU, 2))
+        else:
+            hasher.update(encode_vector_len(self.config.group.serialize(pkU), 2))
         hasher.update(serialized_request)
         hasher.update(nonceU)
         hasher.update(encode_vector(info1))
         hasher.update(self.config.group.serialize(epkU))
-        hasher.update(encode_vector_len(idS, 2))
+        if idS:
+            hasher.update(encode_vector_len(idS, 2))
+        else:
+            hasher.update(encode_vector_len(self.config.group.serialize(pkS), 2))
         hasher.update(serialized_response)
         hasher.update(nonceS)
         hasher.update(self.config.group.serialize(epkS))
@@ -162,7 +181,7 @@ class OPAQUE3DH(KeyExchange):
         server_mac_key, client_mac_key, handshake_encrypt_key, session_key, handshake_secret = self.derive_3dh_keys(dh_components, hasher.digest())
 
         # Encrypt e_info2
-        pad = hkdf_expand(self.config, handshake_encrypt_key, _as_bytes("encryption pad"), len(info2))
+        pad = hkdf_expand(self.config, handshake_encrypt_key, _as_bytes("EncryptionPad"), len(info2))
         e_info2 = xor(pad, info2)
 
         hasher.update(encode_vector(e_info2))
@@ -194,6 +213,8 @@ class OPAQUE3DH(KeyExchange):
         if "ristretto" in self.config.group.name or "decaf" in self.config.group.name:
             skU = OS2IP_le(skU_bytes)
         pkS = self.config.group.deserialize(pkS_bytes)
+        pkU = skU * self.config.group.generator()
+        pkU_bytes = self.config.group.serialize(pkU)
         
         idU = self.idU
         idS = self.idS
@@ -207,7 +228,10 @@ class OPAQUE3DH(KeyExchange):
         mac = handshake_encrypt_key.mac
 
         hasher = self.hasher
-        hasher.update(encode_vector_len(idS, 2))
+        if idS:
+            hasher.update(encode_vector_len(idS, 2))
+        else:
+            hasher.update(encode_vector_len(self.config.group.serialize(pkS), 2))
         hasher.update(serialized_response)
         hasher.update(nonceS)
         hasher.update(self.config.group.serialize(epkS))
